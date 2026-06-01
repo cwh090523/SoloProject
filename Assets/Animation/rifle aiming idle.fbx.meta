@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 010f3cbf052f07d409f2c7390d485366
+guid: d6d316178f486914ea17d225bf85312d
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -22,7 +22,7 @@ ModelImporter:
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
     importConstraints: 0
-    animationCompression: 1
+    animationCompression: 3
     animationRotationError: 0.5
     animationPositionError: 0.5
     animationScaleError: 0.5
@@ -492,13 +492,13 @@ ModelImporter:
         length: 0
         modified: 0
     skeleton:
-    - name: metarig
+    - name: rifle aiming idle(Clone)
       parentName: 
-      position: {x: 0, y: 0, z: 0}
-      rotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071067}
+      position: {x: 0.10919443, y: -0.018001938, z: 0.17949882}
+      rotation: {x: -0.73919773, y: 0.22445661, z: 0.25799987, w: 0.5802086}
       scale: {x: 100, y: 100, z: 100}
     - name: spine
-      parentName: metarig
+      parentName: rifle aiming idle(Clone)
       position: {x: -0, y: 0.000027999999, z: 0.0089}
       rotation: {x: 0.67515224, y: -0.18764478, z: -0.28571695, w: 0.6537008}
       scale: {x: 1, y: 1, z: 1}

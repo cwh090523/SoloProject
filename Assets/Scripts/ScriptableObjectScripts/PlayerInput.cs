@@ -10,6 +10,8 @@ namespace ScriptableObjectScripts
         public event Action<Vector2> OnMovementChange;
         public event Action OnAttackKeyPressed;
         public event Action OnCrouchKeyPressed;
+        public event Action OnJumpKeyPressed;
+        public event Action<bool> OnSprintKeyPressed;
         
         public delegate void SkillKeyPress(int keyCode, bool isPressed);
         public event SkillKeyPress OnSkillKeyPressed;
@@ -53,7 +55,6 @@ namespace ScriptableObjectScripts
 
         public void OnAiming(InputAction.CallbackContext context)
         {
-            throw new NotImplementedException();
         }
 
         public void OnAttack(InputAction.CallbackContext context)
@@ -64,7 +65,6 @@ namespace ScriptableObjectScripts
 
         public void OnInteract(InputAction.CallbackContext context)
         {
-            throw new NotImplementedException();
         }
 
         public void OnCrouch(InputAction.CallbackContext context)
@@ -75,12 +75,16 @@ namespace ScriptableObjectScripts
 
         public void OnJump(InputAction.CallbackContext context)
         {
-            throw new NotImplementedException();
+            if(context.performed)
+                OnJumpKeyPressed?.Invoke();
         }
 
         public void OnSprint(InputAction.CallbackContext context)
         {
-            throw new NotImplementedException();
+            if(context.performed)
+                OnSprintKeyPressed?.Invoke(true);
+            else if(context.canceled)
+                OnSprintKeyPressed?.Invoke(false);
         }
         
         public void OnSkill(InputAction.CallbackContext context)

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 010f3cbf052f07d409f2c7390d485366
+guid: b5260d744442d264a89cffd0d8205f8b
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -22,7 +22,7 @@ ModelImporter:
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
     importConstraints: 0
-    animationCompression: 1
+    animationCompression: 3
     animationRotationError: 0.5
     animationPositionError: 0.5
     animationScaleError: 0.5
@@ -494,8 +494,8 @@ ModelImporter:
     skeleton:
     - name: metarig
       parentName: 
-      position: {x: 0, y: 0, z: 0}
-      rotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071067}
+      position: {x: 0, y: 0.0148024745, z: -0.011939526}
+      rotation: {x: -0.7071067, y: -0.00000006203821, z: 0.000000058371075, w: 0.7071068}
       scale: {x: 100, y: 100, z: 100}
     - name: spine
       parentName: metarig
