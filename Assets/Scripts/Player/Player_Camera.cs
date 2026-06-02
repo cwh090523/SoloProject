@@ -10,6 +10,7 @@ public class PlayerCamera : MonoBehaviour
     public float mouseSpeed;
     [SerializeField]private float _yRotate;
     [SerializeField]private float _xRotate;
+    [SerializeField] private float cameraYawOffset;
     [SerializeField]private Camera cam;
     [SerializeField] private float recoilReturnSpeed = 12f;
     [SerializeField] private float recoilSnappiness = 20f;
@@ -52,7 +53,10 @@ public class PlayerCamera : MonoBehaviour
         _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, recoilSnappiness * Time.deltaTime);
 
         transform.rotation = Quaternion.Euler(0, _yRotate, 0);
-        cam.transform.localRotation = Quaternion.Euler(_xRotate - _currentRecoil.x, _currentRecoil.y, 0);
+        cam.transform.localRotation = Quaternion.Euler(
+            _xRotate - _currentRecoil.x,
+            cameraYawOffset + _currentRecoil.y,
+            0);
     }
 
     public void AddRecoil(float vertical, float horizontal)

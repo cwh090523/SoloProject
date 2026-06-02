@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[RequireComponent(typeof(PlayerController))]
+[RequireComponent(typeof(Animator))]
 public class PlayerAnimation : MonoBehaviour
 {
     private static readonly int MoveXHash = Animator.StringToHash("MoveX");
@@ -24,10 +24,10 @@ public class PlayerAnimation : MonoBehaviour
 
     private void Awake()
     {
-        _playerController = GetComponent<PlayerController>();
+        _playerController = GetComponentInParent<PlayerController>();
 
         if (animator == null)
-            animator = GetComponentInChildren<Animator>();
+            animator = GetComponent<Animator>();
 
         if (animator != null)
             animator.applyRootMotion = false;
@@ -35,7 +35,7 @@ public class PlayerAnimation : MonoBehaviour
 
     private void Update()
     {
-        if (animator == null)
+        if (animator == null || _playerController == null)
             return;
 
         Vector2 moveInput = _playerController.MoveInput;

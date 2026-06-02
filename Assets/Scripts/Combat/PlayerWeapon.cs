@@ -22,6 +22,7 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float damage = 25f;
     [SerializeField] private float range = 100f;
     [SerializeField] private float fireRate = 9f;
+    [SerializeField] private float autoFireHoldDelay = 0.3f;
     [SerializeField] private LayerMask hitLayers = ~0;
 
     [Header("Accuracy")]
@@ -43,6 +44,7 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float fireAnimationDuration = 0.12f;
     [SerializeField] private bool drawDebugRay = true;
     [SerializeField] private Light muzzleFlashLight;
+    [SerializeField] private ParticleSystem[] muzzleParticles;
     [SerializeField] private float muzzleFlashDuration = 0.045f;
     [SerializeField] private AudioClip fireClip;
     [SerializeField] private AudioClip reloadClip;
@@ -52,6 +54,7 @@ public class PlayerWeapon : MonoBehaviour
     private bool _isReloading;
     private Coroutine _muzzleFlashRoutine;
     private float _currentSpread;
+    private float _attackHeldTime;
 
     public event Action Fired;
     public event Action ReloadStarted;
@@ -90,9 +93,25 @@ public class PlayerWeapon : MonoBehaviour
     private void Update()
     {
         RecoverSpread();
+        UpdateAutoFire();
 
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
             TryReload();
+    }
+
+    private void UpdateAutoFire()
+    {
+        if (Mouse.current == null || !Mouse.current.leftButton.isPressed)
+        {
+            _attackHeldTime = 0f;
+            return;
+        }
+
+        _attackHeldTime += Time.deltaTime;
+        if (_attackHeldTime < autoFireHoldDelay)
+            return;
+
+        TryFire();
     }
 
     private void TryFire()
@@ -180,13 +199,16 @@ public class PlayerWeapon : MonoBehaviour
             aimCamera = playerCamera != null ? playerCamera.Camera : Camera.main;
 
         if (animator == null)
-            animator = GetComponent<Animator>();
+            animator = GetComponentInChildren<Animator>();
 
         if (playerAnimation == null)
-            playerAnimation = GetComponent<PlayerAnimation>();
+            playerAnimation = GetComponentInChildren<PlayerAnimation>();
 
         if (muzzlePoint == null && aimCamera != null)
             muzzlePoint = aimCamera.transform;
+
+        if ((muzzleParticles == null || muzzleParticles.Length == 0) && muzzlePoint != null)
+            muzzleParticles = muzzlePoint.GetComponentsInChildren<ParticleSystem>(true);
 
         if (audioSource == null)
             audioSource = GetComponent<AudioSource>();
@@ -258,10 +280,28 @@ public class PlayerWeapon : MonoBehaviour
         if (audioSource != null && fireClip != null)
             audioSource.PlayOneShot(fireClip);
 
+        PlayMuzzleParticles();
+
         if (_muzzleFlashRoutine != null)
             StopCoroutine(_muzzleFlashRoutine);
 
         _muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
+    }
+
+    private void PlayMuzzleParticles()
+    {
+        if (muzzleParticles == null)
+            return;
+
+        for (int i = 0; i < muzzleParticles.Length; i++)
+        {
+            ParticleSystem particle = muzzleParticles[i];
+            if (particle == null)
+                continue;
+
+            particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            particle.Play(true);
+        }
     }
 
     private void PlayReloadFeedback()

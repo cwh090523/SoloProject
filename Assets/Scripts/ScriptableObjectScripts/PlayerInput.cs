@@ -9,7 +9,7 @@ namespace ScriptableObjectScripts
     {
         public event Action<Vector2> OnMovementChange;
         public event Action OnAttackKeyPressed;
-        public event Action OnCrouchKeyPressed;
+        public event Action<bool> OnCrouchKeyPressed;
         public event Action OnJumpKeyPressed;
         public event Action<bool> OnSprintKeyPressed;
         
@@ -69,8 +69,10 @@ namespace ScriptableObjectScripts
 
         public void OnCrouch(InputAction.CallbackContext context)
         {
-            if(context.performed)
-                OnCrouchKeyPressed?.Invoke();
+            if(context.started || context.performed)
+                OnCrouchKeyPressed?.Invoke(true);
+            else if(context.canceled)
+                OnCrouchKeyPressed?.Invoke(false);
         }
 
         public void OnJump(InputAction.CallbackContext context)
