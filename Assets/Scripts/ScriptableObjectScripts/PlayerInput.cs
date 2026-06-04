@@ -9,6 +9,7 @@ namespace ScriptableObjectScripts
     {
         public event Action<Vector2> OnMovementChange;
         public event Action OnAttackKeyPressed;
+        public event Action<bool> OnAimKeyPressed;
         public event Action<bool> OnCrouchKeyPressed;
         public event Action OnJumpKeyPressed;
         public event Action<bool> OnSprintKeyPressed;
@@ -55,6 +56,10 @@ namespace ScriptableObjectScripts
 
         public void OnAiming(InputAction.CallbackContext context)
         {
+            if(context.started || context.performed)
+                OnAimKeyPressed?.Invoke(true);
+            else if(context.canceled)
+                OnAimKeyPressed?.Invoke(false);
         }
 
         public void OnAttack(InputAction.CallbackContext context)

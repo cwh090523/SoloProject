@@ -822,6 +822,14 @@ PrefabInstance:
       propertyPath: magazineSize
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 516715893922492003, guid: fdcabf91adc60bb4fba9b53363e2863e, type: 3}
+      propertyPath: recoilVertical
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3517453400241514982, guid: fdcabf91adc60bb4fba9b53363e2863e, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4253909584755455310, guid: fdcabf91adc60bb4fba9b53363e2863e, type: 3}
       propertyPath: cameraRoot
       value: 

@@ -30,6 +30,9 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float maxSpread = 2.25f;
     [SerializeField] private float spreadRecoverySpeed = 1.8f;
     [SerializeField] private float spreadAnglePerPoint = 1.15f;
+    [SerializeField] private float aimSpreadMultiplier = 0.02f;
+    [SerializeField] private float aimSpreadIncreasePerShot = 0f;
+    [SerializeField] private float aimSpreadRecoverySpeed = 8f;
 
     [Header("Ammo")]
     [SerializeField] private int magazineSize = 30;
@@ -43,9 +46,8 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private string reloadStateName = "Reloading";
     [SerializeField] private float fireAnimationDuration = 0.12f;
     [SerializeField] private bool drawDebugRay = true;
-    [SerializeField] private Light muzzleFlashLight;
+    // [SerializeField] private Light muzzleFlashLight;
     [SerializeField] private ParticleSystem[] muzzleParticles;
-    [SerializeField] private float muzzleFlashDuration = 0.045f;
     [SerializeField] private AudioClip fireClip;
     [SerializeField] private AudioClip reloadClip;
 
@@ -55,6 +57,7 @@ public class PlayerWeapon : MonoBehaviour
     private Coroutine _muzzleFlashRoutine;
     private float _currentSpread;
     private float _attackHeldTime;
+    private bool _isAiming;
 
     public event Action Fired;
     public event Action ReloadStarted;
@@ -66,28 +69,35 @@ public class PlayerWeapon : MonoBehaviour
     public int MagazineSize => magazineSize;
     public int ReserveAmmo => reserveAmmo;
     public bool IsReloading => _isReloading;
+    public bool IsAiming => _isAiming;
     public float CurrentSpread => _currentSpread;
     public float MaxSpread => maxSpread;
-    public float SpreadRatio => maxSpread <= 0f ? 0f : Mathf.Clamp01(_currentSpread / maxSpread);
+    public float SpreadRatio => maxSpread <= 0f ? 0f : Mathf.Clamp01(GetEffectiveSpread() / maxSpread);
 
     private void Awake()
     {
         _currentAmmo = magazineSize;
         ResolveReferences();
-        EnsureFeedbackObjects();
+        // EnsureFeedbackObjects();
         AmmoChanged?.Invoke();
     }
 
     private void OnEnable()
     {
         if (playerInput != null)
+        {
             playerInput.OnAttackKeyPressed += TryFire;
+            playerInput.OnAimKeyPressed += HandleAim;
+        }
     }
 
     private void OnDisable()
     {
         if (playerInput != null)
+        {
             playerInput.OnAttackKeyPressed -= TryFire;
+            playerInput.OnAimKeyPressed -= HandleAim;
+        }
     }
 
     private void Update()
@@ -216,7 +226,8 @@ public class PlayerWeapon : MonoBehaviour
 
     private void IncreaseSpread()
     {
-        _currentSpread = Mathf.Min(maxSpread, _currentSpread + spreadIncreasePerShot);
+        float increase = _isAiming ? aimSpreadIncreasePerShot : spreadIncreasePerShot;
+        _currentSpread = Mathf.Min(maxSpread, _currentSpread + increase);
     }
 
     private void RecoverSpread()
@@ -224,47 +235,61 @@ public class PlayerWeapon : MonoBehaviour
         if (_currentSpread <= 0f)
             return;
 
-        _currentSpread = Mathf.MoveTowards(_currentSpread, 0f, spreadRecoverySpeed * Time.deltaTime);
+        float recoverySpeed = _isAiming ? aimSpreadRecoverySpeed : spreadRecoverySpeed;
+        _currentSpread = Mathf.MoveTowards(_currentSpread, 0f, recoverySpeed * Time.deltaTime);
     }
 
     private Vector3 GetSpreadDirection(Vector3 baseDirection)
     {
-        if (_currentSpread <= 0f || aimCamera == null)
+        float effectiveSpread = GetEffectiveSpread();
+        if (effectiveSpread <= 0f || aimCamera == null)
             return baseDirection;
 
-        Vector2 randomPoint = UnityEngine.Random.insideUnitCircle * (_currentSpread * spreadAnglePerPoint);
+        Vector2 randomPoint = UnityEngine.Random.insideUnitCircle * (effectiveSpread * spreadAnglePerPoint);
         Quaternion spreadRotation = Quaternion.AngleAxis(randomPoint.x, aimCamera.transform.up) *
                                     Quaternion.AngleAxis(randomPoint.y, aimCamera.transform.right);
 
         return (spreadRotation * baseDirection).normalized;
     }
 
-    private void EnsureFeedbackObjects()
+    private void HandleAim(bool isPressed)
     {
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
-
-        audioSource.playOnAwake = false;
-        audioSource.spatialBlend = 0f;
-
-        if (fireClip == null)
-            fireClip = CreateToneClip("Procedural Fire", 900f, 0.055f, 0.35f);
-
-        if (reloadClip == null)
-            reloadClip = CreateToneClip("Procedural Reload", 260f, 0.12f, 0.2f);
-
-        if (muzzleFlashLight != null || muzzlePoint == null)
-            return;
-
-        GameObject lightObject = new GameObject("Muzzle Flash Light");
-        lightObject.transform.SetParent(muzzlePoint, false);
-        lightObject.transform.localPosition = Vector3.forward * 0.35f;
-        muzzleFlashLight = lightObject.AddComponent<Light>();
-        muzzleFlashLight.type = LightType.Point;
-        muzzleFlashLight.color = new Color(1f, 0.78f, 0.35f);
-        muzzleFlashLight.range = 3f;
-        muzzleFlashLight.intensity = 0f;
+        _isAiming = isPressed;
+        if (_isAiming)
+            _currentSpread = Mathf.Min(_currentSpread, maxSpread * aimSpreadMultiplier);
     }
+
+    private float GetEffectiveSpread()
+    {
+        return _isAiming ? _currentSpread * aimSpreadMultiplier : _currentSpread;
+    }
+
+    // private void EnsureFeedbackObjects()
+    // {
+    //     if (audioSource == null)
+    //         audioSource = gameObject.AddComponent<AudioSource>();
+    //
+    //     audioSource.playOnAwake = false;
+    //     audioSource.spatialBlend = 0f;
+    //
+    //     if (fireClip == null)
+    //         fireClip = CreateToneClip("Procedural Fire", 900f, 0.055f, 0.35f);
+    //
+    //     if (reloadClip == null)
+    //         reloadClip = CreateToneClip("Procedural Reload", 260f, 0.12f, 0.2f);
+    //
+    //     if (muzzleFlashLight != null || muzzlePoint == null)
+    //         return;
+    //
+    //     GameObject lightObject = new GameObject("Muzzle Flash Light");
+    //     lightObject.transform.SetParent(muzzlePoint, false);
+    //     lightObject.transform.localPosition = Vector3.forward * 0.35f;
+    //     muzzleFlashLight = lightObject.AddComponent<Light>();
+    //     muzzleFlashLight.type = LightType.Point;
+    //     muzzleFlashLight.color = new Color(1f, 0.78f, 0.35f);
+    //     muzzleFlashLight.range = 3f;
+    //     muzzleFlashLight.intensity = 0f;
+    // }
 
     private void ApplyRecoil()
     {
@@ -285,7 +310,7 @@ public class PlayerWeapon : MonoBehaviour
         if (_muzzleFlashRoutine != null)
             StopCoroutine(_muzzleFlashRoutine);
 
-        _muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
+        // _muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
     }
 
     private void PlayMuzzleParticles()
@@ -310,15 +335,15 @@ public class PlayerWeapon : MonoBehaviour
             audioSource.PlayOneShot(reloadClip);
     }
 
-    private IEnumerator MuzzleFlashRoutine()
-    {
-        if (muzzleFlashLight == null)
-            yield break;
-
-        muzzleFlashLight.intensity = 12f;
-        yield return new WaitForSeconds(muzzleFlashDuration);
-        muzzleFlashLight.intensity = 0f;
-    }
+    // private IEnumerator MuzzleFlashRoutine()
+    // {
+    //     if (muzzleFlashLight == null)
+    //         yield break;
+    //
+    //     muzzleFlashLight.intensity = 12f;
+    //     yield return new WaitForSeconds(muzzleFlashDuration);
+    //     muzzleFlashLight.intensity = 0f;
+    // }
 
     private void SpawnHitEffect(Vector3 point, Vector3 normal)
     {
