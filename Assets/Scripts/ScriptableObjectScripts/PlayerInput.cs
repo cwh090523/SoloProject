@@ -11,6 +11,7 @@ namespace ScriptableObjectScripts
         public event Action OnAttackKeyPressed;
         public event Action<bool> OnAimKeyPressed;
         public event Action<bool> OnCrouchKeyPressed;
+        public event Action<float> OnLeanChanged;
         public event Action OnJumpKeyPressed;
         public event Action<bool> OnSprintKeyPressed;
         
@@ -19,6 +20,8 @@ namespace ScriptableObjectScripts
 
         [SerializeField] private LayerMask whatIsGround;
         private Controls _controls;
+        private bool _isLeaningRight;
+        private bool _isLeaningLeft;
         
 
         private Camera _mainCam;
@@ -93,7 +96,27 @@ namespace ScriptableObjectScripts
             else if(context.canceled)
                 OnSprintKeyPressed?.Invoke(false);
         }
-        
+
+        public void OnTiltRight(InputAction.CallbackContext context)
+        {
+            if (context.started || context.performed)
+                _isLeaningRight = true;
+            else if (context.canceled)
+                _isLeaningRight = false;
+
+            RaiseLeanChanged();
+        }
+
+        public void OnTiltLeft(InputAction.CallbackContext context)
+        {
+            if (context.started || context.performed)
+                _isLeaningLeft = true;
+            else if (context.canceled)
+                _isLeaningLeft = false;
+
+            RaiseLeanChanged();
+        }
+
         public void OnSkill(InputAction.CallbackContext context)
         {
             int keyCode = context.action.GetBindingIndexForControl(context.control);
@@ -102,6 +125,18 @@ namespace ScriptableObjectScripts
                 OnSkillKeyPressed?.Invoke(keyCode, true);
             else if(context.canceled)
                 OnSkillKeyPressed?.Invoke(keyCode, false);
+        }
+
+        private void RaiseLeanChanged()
+        {
+            float lean = 0f;
+
+            if (_isLeaningRight && !_isLeaningLeft)
+                lean = 1f;
+            else if (_isLeaningLeft && !_isLeaningRight)
+                lean = -1f;
+
+            OnLeanChanged?.Invoke(lean);
         }
 
        

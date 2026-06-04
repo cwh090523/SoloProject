@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using ScriptableObjectScripts;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -48,8 +49,14 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private bool drawDebugRay = true;
     // [SerializeField] private Light muzzleFlashLight;
     [SerializeField] private ParticleSystem[] muzzleParticles;
+    [SerializeField] private GameObject bulletHolePrefab;
+    [SerializeField] private GameObject hitParticlePrefab;
+    [SerializeField] private int maxBulletHoles = 15;
+    [SerializeField] private float hitParticleLifetime = 2f;
     [SerializeField] private AudioClip fireClip;
     [SerializeField] private AudioClip reloadClip;
+
+    private static readonly Queue<GameObject> BulletHolePool = new Queue<GameObject>();
 
     private int _currentAmmo;
     private float _nextFireTime;
@@ -160,11 +167,23 @@ public class PlayerWeapon : MonoBehaviour
         if (!Physics.Raycast(ray, out RaycastHit hit, range, hitLayers, QueryTriggerInteraction.Ignore))
             return;
 
-        SpawnHitEffect(hit.point, hit.normal);
+        IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+        bool isHeadshot;
+        float finalDamage = GetFinalDamage(hit, out isHeadshot);
+
+        bool canTakeDamage = damageable != null;
+        SpawnHitEffect(hit.point, hit.normal, isHeadshot, !canTakeDamage);
         HitConfirmed?.Invoke();
 
-        IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
-        damageable?.TakeDamage(damage);
+        if (!canTakeDamage)
+            return;
+
+        damageable.TakeDamage(finalDamage);
+        PlayDamageHitReaction(hit, isHeadshot);
+        DamageTextSpawner.ShowDamage(hit.point, hit.normal, finalDamage, aimCamera, hit.distance, range);
+
+        if (isHeadshot)
+            Debug.Log($"Headshot! Damage: {finalDamage}");
     }
 
     private void TryReload()
@@ -173,6 +192,44 @@ public class PlayerWeapon : MonoBehaviour
             return;
 
         StartCoroutine(ReloadRoutine());
+    }
+
+    private float GetFinalDamage(RaycastHit hit, out bool isHeadshot)
+    {
+        isHeadshot = false;
+
+        Hitbox hitbox = hit.collider.GetComponent<Hitbox>();
+        if (hitbox != null)
+        {
+            isHeadshot = hitbox.IsHeadshot;
+            return damage * hitbox.DamageMultiplier;
+        }
+
+        DummyTarget dummyTarget = hit.collider.GetComponentInParent<DummyTarget>();
+        if (dummyTarget != null)
+            return damage * dummyTarget.GetDamageMultiplier(hit.collider, hit.point, out isHeadshot);
+
+        return damage;
+    }
+
+    private void PlayDamageHitReaction(RaycastHit hit, bool isHeadshot)
+    {
+        DamageHitReaction hitReaction = hit.collider.GetComponentInParent<DamageHitReaction>();
+        if (hitReaction != null)
+        {
+            hitReaction.PlayHitReaction(isHeadshot);
+            return;
+        }
+
+        Animator targetAnimator = hit.collider.GetComponentInParent<Animator>();
+        if (targetAnimator == null)
+            return;
+
+        DamageHitReaction addedHitReaction = targetAnimator.GetComponent<DamageHitReaction>();
+        if (addedHitReaction == null)
+            addedHitReaction = targetAnimator.gameObject.AddComponent<DamageHitReaction>();
+
+        addedHitReaction.PlayHitReaction(isHeadshot);
     }
 
     private IEnumerator ReloadRoutine()
@@ -345,22 +402,51 @@ public class PlayerWeapon : MonoBehaviour
     //     muzzleFlashLight.intensity = 0f;
     // }
 
-    private void SpawnHitEffect(Vector3 point, Vector3 normal)
+    private void SpawnHitEffect(Vector3 point, Vector3 normal, bool isHeadshot, bool spawnBulletHole)
     {
-        GameObject hitEffect = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        hitEffect.name = "Hit Effect";
-        hitEffect.transform.position = point + normal * 0.02f;
-        hitEffect.transform.localScale = Vector3.one * 0.08f;
+        Quaternion surfaceRotation = Quaternion.LookRotation(-normal);
 
-        Collider effectCollider = hitEffect.GetComponent<Collider>();
-        if (effectCollider != null)
-            Destroy(effectCollider);
+        if (bulletHolePrefab != null && spawnBulletHole)
+        {
+            SpawnBulletHole(point, normal, surfaceRotation);
+        }
 
-        Renderer renderer = hitEffect.GetComponent<Renderer>();
-        if (renderer != null)
-            renderer.material.color = new Color(1f, 0.9f, 0.25f);
+        if (hitParticlePrefab != null && isHeadshot)
+        {
+            GameObject hitParticle = Instantiate(hitParticlePrefab, point + normal * 0.03f, Quaternion.LookRotation(normal));
+            Destroy(hitParticle, hitParticleLifetime);
+        }
+    }
 
-        Destroy(hitEffect, 0.18f);
+    private void SpawnBulletHole(Vector3 point, Vector3 normal, Quaternion surfaceRotation)
+    {
+        GameObject bulletHole;
+        int poolLimit = Mathf.Max(1, maxBulletHoles);
+
+        if (BulletHolePool.Count < poolLimit)
+        {
+            bulletHole = Instantiate(bulletHolePrefab);
+        }
+        else
+        {
+            bulletHole = BulletHolePool.Dequeue();
+
+            if (bulletHole == null)
+            {
+                bulletHole = Instantiate(bulletHolePrefab);
+            }
+            else
+            {
+                bulletHole.SetActive(true);
+            }
+        }
+
+        bulletHole.name = bulletHolePrefab.name;
+        bulletHole.transform.position = point + normal * 0.01f;
+        bulletHole.transform.rotation = surfaceRotation;
+        bulletHole.transform.Rotate(0f, 0f, UnityEngine.Random.Range(0f, 360f), Space.Self);
+
+        BulletHolePool.Enqueue(bulletHole);
     }
 
     private void PlayAction(string stateName, float duration)

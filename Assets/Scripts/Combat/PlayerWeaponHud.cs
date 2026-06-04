@@ -55,6 +55,7 @@ public class PlayerWeaponHud : MonoBehaviour
 
     private void Update()
     {
+            
         Color color = Time.time < _hitMarkerUntil ? hitMarkerColor : crosshairColor;
         foreach (Image line in _crosshairLines)
             line.color = color;
@@ -135,9 +136,22 @@ public class PlayerWeaponHud : MonoBehaviour
 
     private void UpdateCrosshairSpread()
     {
+        if (weapon.IsAiming)
+        {
+            foreach (Image image in _crosshairLines)
+            {
+                image.gameObject.SetActive(false);
+            }
+            return;
+        }
         if (_crosshairRects == null || weapon == null)
             return;
 
+        foreach (Image image in _crosshairLines)
+        {
+            image.gameObject.SetActive(true);
+        }
+        
         float gap = crosshairGap + maxSpreadGapBonus * weapon.SpreadRatio;
         float halfLength = crosshairLength * 0.5f;
 

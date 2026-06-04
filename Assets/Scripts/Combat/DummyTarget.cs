@@ -4,13 +4,15 @@ using UnityEngine;
 public class DummyTarget : MonoBehaviour, IDamageable
 {
     [SerializeField] private float maxHealth = 100f;
+    [SerializeField]private float currentHealth;
     [SerializeField] private float resetDelay = 1.2f;
     [SerializeField] private Renderer targetRenderer;
     [SerializeField] private Color idleColor = new Color(0.75f, 0.65f, 0.45f);
     [SerializeField] private Color hitColor = Color.red;
     [SerializeField] private Color deadColor = Color.black;
+    [SerializeField] private float headshotHeightRatio = 0.72f;
+    [SerializeField] private float headshotMultiplier = 2f;
 
-    private float _currentHealth;
     private float _lastHitTime;
     private bool _isDead;
     private Material _runtimeMaterial;
@@ -45,10 +47,10 @@ public class DummyTarget : MonoBehaviour, IDamageable
         if (_isDead)
             return;
 
-        _currentHealth = Mathf.Max(0f, _currentHealth - damage);
+        currentHealth = Mathf.Max(0f, currentHealth - damage);
         _lastHitTime = Time.time;
 
-        if (_currentHealth <= 0f)
+        if (currentHealth <= 0f)
         {
             _isDead = true;
             SetColor(deadColor);
@@ -58,9 +60,36 @@ public class DummyTarget : MonoBehaviour, IDamageable
         SetColor(hitColor);
     }
 
+    public float GetDamageMultiplier(Collider hitCollider, Vector3 hitPoint, out bool isHeadshot)
+    {
+        Hitbox hitbox = hitCollider != null ? hitCollider.GetComponent<Hitbox>() : null;
+        if (hitbox != null)
+        {
+            isHeadshot = hitbox.IsHeadshot;
+            return hitbox.DamageMultiplier;
+        }
+
+        isHeadshot = IsPointInHeadArea(hitPoint);
+        return isHeadshot ? headshotMultiplier : 1f;
+    }
+
+    private bool IsPointInHeadArea(Vector3 hitPoint)
+    {
+        Collider targetCollider = GetComponent<Collider>();
+        if (targetCollider == null)
+            return false;
+
+        Bounds bounds = targetCollider.bounds;
+        if (bounds.size.y <= 0f)
+            return false;
+
+        float heightRatio = Mathf.InverseLerp(bounds.min.y, bounds.max.y, hitPoint.y);
+        return heightRatio >= headshotHeightRatio;
+    }
+
     private void ResetTarget()
     {
-        _currentHealth = maxHealth;
+        currentHealth = maxHealth;
         _isDead = false;
         SetColor(idleColor);
     }
