@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,12 +13,18 @@ public class PlayerWeaponHud : MonoBehaviour
     [SerializeField] private float crosshairThickness = 2f;
     [SerializeField] private float maxSpreadGapBonus = 90f;
     [SerializeField] private float hitMarkerDuration = 0.12f;
+    [Header("Optional Scene HUD")]
+    [SerializeField] private Canvas hudCanvas;
+    [SerializeField] private Image[] serializedCrosshairLines;
+    [SerializeField] private TMP_Text serializedAmmoText;
+    [SerializeField] private TMP_Text serializedReloadText;
+    [SerializeField] private bool buildHudIfMissing = true;
 
     private Canvas _canvas;
     private Image[] _crosshairLines;
     private RectTransform[] _crosshairRects;
-    private Text _ammoText;
-    private Text _reloadText;
+    private TMP_Text _ammoText;
+    private TMP_Text _reloadText;
     private float _hitMarkerUntil;
 
     private void Awake()
@@ -55,16 +62,29 @@ public class PlayerWeaponHud : MonoBehaviour
 
     private void Update()
     {
-            
+        if (_crosshairLines == null)
+            return;
+
         Color color = Time.time < _hitMarkerUntil ? hitMarkerColor : crosshairColor;
         foreach (Image line in _crosshairLines)
+        {
+            if (line == null)
+                continue;
+
             line.color = color;
+        }
 
         UpdateCrosshairSpread();
     }
 
     private void BuildHud()
     {
+        if (TryUseSerializedHud())
+            return;
+
+        if (!buildHudIfMissing)
+            return;
+
         _canvas = CreateCanvas();
 
         RectTransform root = _canvas.GetComponent<RectTransform>();
@@ -78,7 +98,7 @@ public class PlayerWeaponHud : MonoBehaviour
         for (int i = 0; i < _crosshairLines.Length; i++)
             _crosshairRects[i] = _crosshairLines[i].rectTransform;
 
-        _ammoText = CreateText(root, "Ammo Text", TextAnchor.LowerRight, 28, FontStyle.Bold);
+        _ammoText = CreateText(root, "Ammo Text", TextAlignmentOptions.BottomRight, 28, FontStyles.Bold);
         RectTransform ammoRect = _ammoText.rectTransform;
         ammoRect.anchorMin = new Vector2(1f, 0f);
         ammoRect.anchorMax = new Vector2(1f, 0f);
@@ -86,7 +106,7 @@ public class PlayerWeaponHud : MonoBehaviour
         ammoRect.anchoredPosition = new Vector2(-32f, 24f);
         ammoRect.sizeDelta = new Vector2(260f, 72f);
 
-        _reloadText = CreateText(root, "Reload Text", TextAnchor.MiddleCenter, 20, FontStyle.Bold);
+        _reloadText = CreateText(root, "Reload Text", TextAlignmentOptions.Center, 20, FontStyles.Bold);
         _reloadText.color = new Color(1f, 0.84f, 0.3f);
         RectTransform reloadRect = _reloadText.rectTransform;
         reloadRect.anchorMin = new Vector2(0.5f, 0.34f);
@@ -95,6 +115,37 @@ public class PlayerWeaponHud : MonoBehaviour
         reloadRect.anchoredPosition = Vector2.zero;
         reloadRect.sizeDelta = new Vector2(180f, 36f);
         _reloadText.text = "RELOADING";
+    }
+
+    private bool TryUseSerializedHud()
+    {
+        if (hudCanvas == null)
+            return false;
+
+        if (serializedCrosshairLines == null || serializedCrosshairLines.Length != 4)
+            return false;
+
+        if (serializedAmmoText == null || serializedReloadText == null)
+            return false;
+
+        _canvas = hudCanvas;
+        _crosshairLines = serializedCrosshairLines;
+        _crosshairRects = new RectTransform[_crosshairLines.Length];
+
+        for (int i = 0; i < _crosshairLines.Length; i++)
+        {
+            if (_crosshairLines[i] == null)
+                return false;
+
+            _crosshairLines[i].raycastTarget = false;
+            _crosshairRects[i] = _crosshairLines[i].rectTransform;
+        }
+
+        _ammoText = serializedAmmoText;
+        _reloadText = serializedReloadText;
+        _ammoText.raycastTarget = false;
+        _reloadText.raycastTarget = false;
+        return true;
     }
 
     private Canvas CreateCanvas()
@@ -140,6 +191,9 @@ public class PlayerWeaponHud : MonoBehaviour
         {
             foreach (Image image in _crosshairLines)
             {
+                if (image == null)
+                    continue;
+
                 image.gameObject.SetActive(false);
             }
             return;
@@ -149,6 +203,9 @@ public class PlayerWeaponHud : MonoBehaviour
 
         foreach (Image image in _crosshairLines)
         {
+            if (image == null)
+                continue;
+
             image.gameObject.SetActive(true);
         }
         
@@ -161,14 +218,13 @@ public class PlayerWeaponHud : MonoBehaviour
         _crosshairRects[3].anchoredPosition = new Vector2(0f, -gap - halfLength);
     }
 
-    private Text CreateText(RectTransform parent, string objectName, TextAnchor alignment, int fontSize, FontStyle fontStyle)
+    private TMP_Text CreateText(RectTransform parent, string objectName, TextAlignmentOptions alignment, int fontSize, FontStyles fontStyle)
     {
         GameObject textObject = new GameObject(objectName);
         textObject.transform.SetParent(parent, false);
 
-        Text text = textObject.AddComponent<Text>();
+        TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
         text.raycastTarget = false;
-        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         text.fontSize = fontSize;
         text.fontStyle = fontStyle;
         text.alignment = alignment;

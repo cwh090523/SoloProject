@@ -13,14 +13,18 @@ public class PlayerAnimation : MonoBehaviour
 
     [SerializeField] private Animator animator;
     [SerializeField] private float dampTime = 0.1f;
-    [SerializeField] private string idleStateName = "Rifle Idle";
-    [SerializeField] private string moveStateName = "Rifle Run";
-    [SerializeField] private string jumpStateName = "Rifle Jump";
+    [SerializeField] private string idleStateName = "IDLE";
+    [SerializeField] private string walkStateName = "WALK";
+    [SerializeField] private string runStateName = "RUN";
+    [SerializeField] private string jumpStateName = "";
+    [SerializeField] private string aimStateName = "AIMMING";
+    [SerializeField] private bool keepAimStateWhileAiming = true;
     [SerializeField] private float crossFadeDuration = 0.12f;
 
     private PlayerController _playerController;
     private int _currentStateHash;
     private float _actionLockedUntil;
+    private bool _isAiming;
 
     private void Awake()
     {
@@ -64,15 +68,33 @@ public class PlayerAnimation : MonoBehaviour
         _actionLockedUntil = Time.time + duration;
     }
 
+    public void SetAiming(bool isAiming)
+    {
+        if (_isAiming == isAiming)
+            return;
+
+        _isAiming = isAiming;
+        _currentStateHash = 0;
+
+        if (_isAiming && keepAimStateWhileAiming)
+            CrossFadeTo(aimStateName);
+    }
+
     private void UpdateState()
     {
-        if (!_playerController.IsGrounded)
+        if (_isAiming && keepAimStateWhileAiming && HasState(aimStateName))
+        {
+            CrossFadeTo(aimStateName);
+            return;
+        }
+
+        if (!_playerController.IsGrounded && !string.IsNullOrWhiteSpace(jumpStateName))
         {
             CrossFadeTo(jumpStateName);
             return;
         }
 
-        CrossFadeTo(_playerController.IsMoving ? moveStateName : idleStateName);
+        CrossFadeTo(_playerController.IsMoving ? GetMoveStateName() : idleStateName);
     }
 
     private void CrossFadeTo(string stateName)
@@ -84,7 +106,20 @@ public class PlayerAnimation : MonoBehaviour
         if (_currentStateHash == stateHash)
             return;
 
+        if (!HasState(stateName))
+            return;
+
         animator.CrossFadeInFixedTime(stateName, crossFadeDuration);
         _currentStateHash = stateHash;
+    }
+
+    private bool HasState(string stateName)
+    {
+        return !string.IsNullOrWhiteSpace(stateName) && animator.HasState(0, Animator.StringToHash(stateName));
+    }
+
+    private string GetMoveStateName()
+    {
+        return _playerController.IsSprinting ? runStateName : walkStateName;
     }
 }

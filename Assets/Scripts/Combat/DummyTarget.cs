@@ -4,7 +4,6 @@ using UnityEngine;
 public class DummyTarget : MonoBehaviour, IDamageable
 {
     [SerializeField] private float maxHealth = 100f;
-    [SerializeField]private float currentHealth;
     [SerializeField] private float resetDelay = 1.2f;
     [SerializeField] private Renderer targetRenderer;
     [SerializeField] private Color idleColor = new Color(0.75f, 0.65f, 0.45f);
@@ -14,26 +13,50 @@ public class DummyTarget : MonoBehaviour, IDamageable
     [SerializeField] private float headshotMultiplier = 2f;
 
     private float _lastHitTime;
-    private bool _isDead;
     private Material _runtimeMaterial;
+    private DamageHitReaction _hitReaction;
+    private Health _health;
 
     private void Awake()
     {
+        _health = GetComponent<Health>();
+        if (_health == null)
+            _health = gameObject.AddComponent<Health>();
+
+        _hitReaction = GetComponent<DamageHitReaction>();
+        if (_hitReaction == null && GetComponentInChildren<Animator>() != null)
+            _hitReaction = gameObject.AddComponent<DamageHitReaction>();
+
         if (targetRenderer == null)
             targetRenderer = GetComponentInChildren<Renderer>();
 
         if (targetRenderer != null)
             _runtimeMaterial = targetRenderer.material;
 
-        ResetTarget();
+        _health.HealthChanged += HandleHealthChanged;
+        _health.Damaged += HandleDamaged;
+        _health.Died += HandleDied;
+        _health.ResetHealth += HandleResetHealth;
+        _health.RestoreFullHealth();
+    }
+
+    private void OnDestroy()
+    {
+        if (_health == null)
+            return;
+
+        _health.HealthChanged -= HandleHealthChanged;
+        _health.Damaged -= HandleDamaged;
+        _health.Died -= HandleDied;
+        _health.ResetHealth -= HandleResetHealth;
     }
 
     private void Update()
     {
-        if (_isDead)
+        if (_health != null && _health.IsDead)
         {
             if (Time.time - _lastHitTime >= resetDelay)
-                ResetTarget();
+                _health.RestoreFullHealth();
 
             return;
         }
@@ -44,20 +67,10 @@ public class DummyTarget : MonoBehaviour, IDamageable
 
     public void TakeDamage(float damage)
     {
-        if (_isDead)
+        if (_health == null)
             return;
 
-        currentHealth = Mathf.Max(0f, currentHealth - damage);
-        _lastHitTime = Time.time;
-
-        if (currentHealth <= 0f)
-        {
-            _isDead = true;
-            SetColor(deadColor);
-            return;
-        }
-
-        SetColor(hitColor);
+        _health.TakeDamage(damage);
     }
 
     public float GetDamageMultiplier(Collider hitCollider, Vector3 hitPoint, out bool isHeadshot)
@@ -87,10 +100,24 @@ public class DummyTarget : MonoBehaviour, IDamageable
         return heightRatio >= headshotHeightRatio;
     }
 
-    private void ResetTarget()
+    private void HandleHealthChanged(float currentHealth, float healthMax)
     {
-        currentHealth = maxHealth;
-        _isDead = false;
+        maxHealth = healthMax;
+    }
+
+    private void HandleDamaged(float damage)
+    {
+        _lastHitTime = Time.time;
+    }
+
+    private void HandleDied()
+    {
+        _lastHitTime = Time.time;
+        SetColor(deadColor);
+    }
+
+    private void HandleResetHealth()
+    {
         SetColor(idleColor);
     }
 

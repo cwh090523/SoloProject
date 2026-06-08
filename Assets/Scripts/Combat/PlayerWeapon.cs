@@ -43,8 +43,9 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Feedback")]
     [SerializeField] private float recoilVertical = 1.4f;
     [SerializeField] private float recoilHorizontal = 0.35f;
-    [SerializeField] private string fireStateName = "Firing Rifle";
-    [SerializeField] private string reloadStateName = "Reloading";
+    [SerializeField] private string fireStateName = "FIRE";
+    [SerializeField] private string aimFireStateName = "AIMMING_FIRE";
+    [SerializeField] private string reloadStateName = "RELOAD";
     [SerializeField] private float fireAnimationDuration = 0.12f;
     [SerializeField] private bool drawDebugRay = true;
     // [SerializeField] private Light muzzleFlashLight;
@@ -52,11 +53,23 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private GameObject bulletHolePrefab;
     [SerializeField] private GameObject hitParticlePrefab;
     [SerializeField] private int maxBulletHoles = 15;
+    [SerializeField] private float bulletHoleActiveTime = 12f;
     [SerializeField] private float hitParticleLifetime = 2f;
     [SerializeField] private AudioClip fireClip;
     [SerializeField] private AudioClip reloadClip;
 
-    private static readonly Queue<GameObject> BulletHolePool = new Queue<GameObject>();
+    [Header("Shell Ejection")]
+    [SerializeField] private GameObject shellPrefab;
+    [SerializeField] private Transform shellEjectPoint;
+    [SerializeField] private Vector3 fallbackShellLocalOffset = new Vector3(0.18f, -0.08f, 0.25f);
+    [SerializeField] private float shellEjectForce = 1.25f;
+    [SerializeField] private float shellUpwardForce = 0.45f;
+    [SerializeField] private float shellBackwardForce = 0.15f;
+    [SerializeField] private float shellRandomForce = 0.12f;
+    [SerializeField] private float shellTorque = 4f;
+    [SerializeField] private float shellLifetime = 4f;
+
+    private static readonly List<BulletHolePoolItem> BulletHolePool = new List<BulletHolePoolItem>();
 
     private int _currentAmmo;
     private float _nextFireTime;
@@ -105,12 +118,16 @@ public class PlayerWeapon : MonoBehaviour
             playerInput.OnAttackKeyPressed -= TryFire;
             playerInput.OnAimKeyPressed -= HandleAim;
         }
+
+        if (playerAnimation != null)
+            playerAnimation.SetAiming(false);
     }
 
     private void Update()
     {
         RecoverSpread();
         UpdateAutoFire();
+        UpdateBulletHolePool();
 
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
             TryReload();
@@ -148,10 +165,15 @@ public class PlayerWeapon : MonoBehaviour
         IncreaseSpread();
 
         Fired?.Invoke();
-        PlayAction(fireStateName, fireAnimationDuration);
+        PlayAction(GetFireStateName(), fireAnimationDuration);
         ApplyRecoil();
         PlayFireFeedback();
         FireRaycast();
+    }
+
+    private string GetFireStateName()
+    {
+        return _isAiming && !string.IsNullOrWhiteSpace(aimFireStateName) ? aimFireStateName : fireStateName;
     }
 
     private void FireRaycast()
@@ -168,6 +190,7 @@ public class PlayerWeapon : MonoBehaviour
             return;
 
         IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+        Health targetHealth = hit.collider.GetComponentInParent<Health>();
         bool isHeadshot;
         float finalDamage = GetFinalDamage(hit, out isHeadshot);
 
@@ -175,11 +198,14 @@ public class PlayerWeapon : MonoBehaviour
         SpawnHitEffect(hit.point, hit.normal, isHeadshot, !canTakeDamage);
         HitConfirmed?.Invoke();
 
-        if (!canTakeDamage)
+        if (!canTakeDamage || (targetHealth != null && targetHealth.IsDead))
             return;
 
         damageable.TakeDamage(finalDamage);
-        PlayDamageHitReaction(hit, isHeadshot);
+
+        if (targetHealth == null || !targetHealth.IsDead)
+            PlayDamageHitReaction(hit, isHeadshot);
+
         DamageTextSpawner.ShowDamage(hit.point, hit.normal, finalDamage, aimCamera, hit.distance, range);
 
         if (isHeadshot)
@@ -312,6 +338,9 @@ public class PlayerWeapon : MonoBehaviour
     private void HandleAim(bool isPressed)
     {
         _isAiming = isPressed;
+        if (playerAnimation != null)
+            playerAnimation.SetAiming(_isAiming);
+
         if (_isAiming)
             _currentSpread = Mathf.Min(_currentSpread, maxSpread * aimSpreadMultiplier);
     }
@@ -368,6 +397,65 @@ public class PlayerWeapon : MonoBehaviour
             StopCoroutine(_muzzleFlashRoutine);
 
         // _muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
+        EjectShell();
+    }
+
+    private void EjectShell()
+    {
+        if (shellPrefab == null)
+            return;
+
+        Transform reference = GetShellReferenceTransform();
+        if (reference == null)
+            return;
+
+        Vector3 position = shellEjectPoint != null
+            ? shellEjectPoint.position
+            : reference.TransformPoint(fallbackShellLocalOffset);
+
+        Quaternion rotation = shellEjectPoint != null ? shellEjectPoint.rotation : reference.rotation;
+        GameObject shell = Instantiate(shellPrefab, position, rotation);
+        Rigidbody shellRigidbody = EnsureShellRigidbody(shell);
+
+        Vector3 ejectDirection = reference.right * shellEjectForce;
+        ejectDirection += Vector3.up * shellUpwardForce;
+        ejectDirection -= reference.forward * shellBackwardForce;
+        ejectDirection += UnityEngine.Random.insideUnitSphere * shellRandomForce;
+
+        shellRigidbody.linearVelocity = ejectDirection;
+        shellRigidbody.AddTorque(UnityEngine.Random.insideUnitSphere * shellTorque, ForceMode.Impulse);
+        Destroy(shell, shellLifetime);
+    }
+
+    private Transform GetShellReferenceTransform()
+    {
+        if (shellEjectPoint != null)
+            return shellEjectPoint;
+
+        if (muzzlePoint != null)
+            return muzzlePoint;
+
+        return aimCamera != null ? aimCamera.transform : transform;
+    }
+
+    private Rigidbody EnsureShellRigidbody(GameObject shell)
+    {
+        Rigidbody shellRigidbody = shell.GetComponent<Rigidbody>();
+        if (shellRigidbody == null)
+            shellRigidbody = shell.AddComponent<Rigidbody>();
+
+        shellRigidbody.mass = 0.08f;
+        shellRigidbody.linearDamping = 0.05f;
+        shellRigidbody.angularDamping = 0.05f;
+        shellRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+        if (shell.GetComponentInChildren<Collider>() == null)
+        {
+            BoxCollider boxCollider = shell.AddComponent<BoxCollider>();
+            boxCollider.size = new Vector3(0.035f, 0.035f, 0.09f);
+        }
+
+        return shellRigidbody;
     }
 
     private void PlayMuzzleParticles()
@@ -420,33 +508,83 @@ public class PlayerWeapon : MonoBehaviour
 
     private void SpawnBulletHole(Vector3 point, Vector3 normal, Quaternion surfaceRotation)
     {
-        GameObject bulletHole;
-        int poolLimit = Mathf.Max(1, maxBulletHoles);
+        BulletHolePoolItem poolItem = GetBulletHolePoolItem();
+        GameObject bulletHole = poolItem.GameObject;
+        if (bulletHole == null)
+            return;
 
-        if (BulletHolePool.Count < poolLimit)
-        {
-            bulletHole = Instantiate(bulletHolePrefab);
-        }
-        else
-        {
-            bulletHole = BulletHolePool.Dequeue();
+        poolItem.LastUsedTime = Time.time;
+        poolItem.IsActive = true;
 
-            if (bulletHole == null)
-            {
-                bulletHole = Instantiate(bulletHolePrefab);
-            }
-            else
-            {
-                bulletHole.SetActive(true);
-            }
-        }
-
+        bulletHole.SetActive(true);
         bulletHole.name = bulletHolePrefab.name;
         bulletHole.transform.position = point + normal * 0.01f;
         bulletHole.transform.rotation = surfaceRotation;
         bulletHole.transform.Rotate(0f, 0f, UnityEngine.Random.Range(0f, 360f), Space.Self);
+    }
 
-        BulletHolePool.Enqueue(bulletHole);
+    private BulletHolePoolItem GetBulletHolePoolItem()
+    {
+        int poolLimit = Mathf.Max(1, maxBulletHoles);
+
+        if (BulletHolePool.Count < poolLimit)
+        {
+            BulletHolePoolItem createdItem = new BulletHolePoolItem(Instantiate(bulletHolePrefab));
+            BulletHolePool.Add(createdItem);
+            return createdItem;
+        }
+
+        BulletHolePoolItem oldestItem = null;
+        for (int i = 0; i < BulletHolePool.Count; i++)
+        {
+            BulletHolePoolItem item = BulletHolePool[i];
+            if (item.GameObject == null)
+            {
+                item.GameObject = Instantiate(bulletHolePrefab);
+                item.IsActive = false;
+                item.LastUsedTime = 0f;
+                return item;
+            }
+
+            if (!item.IsActive)
+                return item;
+
+            if (oldestItem == null || item.LastUsedTime < oldestItem.LastUsedTime)
+                oldestItem = item;
+        }
+
+        return oldestItem;
+    }
+
+    private void UpdateBulletHolePool()
+    {
+        if (bulletHoleActiveTime <= 0f)
+            return;
+
+        for (int i = 0; i < BulletHolePool.Count; i++)
+        {
+            BulletHolePoolItem item = BulletHolePool[i];
+            if (!item.IsActive || item.GameObject == null)
+                continue;
+
+            if (Time.time - item.LastUsedTime < bulletHoleActiveTime)
+                continue;
+
+            item.GameObject.SetActive(false);
+            item.IsActive = false;
+        }
+    }
+
+    private sealed class BulletHolePoolItem
+    {
+        public BulletHolePoolItem(GameObject gameObject)
+        {
+            GameObject = gameObject;
+        }
+
+        public GameObject GameObject;
+        public float LastUsedTime;
+        public bool IsActive;
     }
 
     private void PlayAction(string stateName, float duration)

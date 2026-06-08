@@ -91,7 +91,7 @@ public class PlayerCamera : MonoBehaviour
         _yRotate += mouseX;
         _xRotate -= mouseY;
 
-        _xRotate = Mathf.Clamp(_xRotate, -90f, 75f);
+        _xRotate = Mathf.Clamp(_xRotate, -90f, 90f);
 
         _targetRecoil = Vector2.Lerp(_targetRecoil, Vector2.zero, recoilReturnSpeed * Time.deltaTime);
         _currentRecoil = Vector2.Lerp(_currentRecoil, _targetRecoil, recoilSnappiness * Time.deltaTime);
