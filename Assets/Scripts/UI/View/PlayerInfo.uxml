@@ -1,0 +1,31 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="PlayerInfoContainer" data-source="project://database/Assets/Scripts/ScriptsObject/health%20view%20model.asset?fileID=11400000&amp;guid=063889825970545498a5a0619f823306&amp;type=2#health view model" style="flex-grow: 1; width: 500px; height: 180px; position: absolute; background-color: rgba(0, 0, 0, 0.75); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; padding-top: 5px; padding-right: 20px; padding-bottom: 5px; padding-left: 20px; left: 30px; top: 870px;">
+        <ui:Label text="Label" style="position: relative; color: rgb(255, 255, 255); font-size: 20px; -unity-font-style: bold;"/>
+        <ui:VisualElement name="BarTrack" style="background-color: rgb(83, 0, 0); height: 65px; position: relative; overflow: hidden;">
+            <ui:VisualElement name="BarFill" style="background-color: rgb(255, 0, 0); height: 100%; position: absolute; left: 0; top: 0; bottom: 0;">
+                <Bindings>
+                    <ui:DataBinding property="style.backgroundColor" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
+                    <ui:DataBinding property="style.width" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Float width Converter"/>
+                </Bindings>
+            </ui:VisualElement>
+            <ui:VisualElement name="TextContainer" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; flex-direction: row-reverse; white-space: nowrap; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding-right: 18px; -unity-text-align: upper-right;">
+                <ui:Label text="Max" name="MaxHealthLabel" style="color: rgb(255, 255, 255); font-size: 30px; -unity-text-align: upper-center;">
+                    <Bindings>
+                        <ui:DataBinding property="text" data-source-path="maxHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                    </Bindings>
+                </ui:Label>
+                <ui:Label text="/" style="font-size: 30px; -unity-text-outline-color: rgb(0, 0, 0); color: rgb(255, 255, 255); -unity-text-align: upper-center;"/>
+                <ui:Label text="Current&#10;" name="CurrentHealthLabel" style="color: rgb(255, 255, 255); font-size: 30px; -unity-text-align: upper-center;">
+                    <Bindings>
+                        <ui:DataBinding property="text" data-source-path="currentHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                    </Bindings>
+                </ui:Label>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Label text="Healthy" name="HealthStateLabel" style="-unity-text-align: upper-center; -unity-font-style: bold; color: rgb(255, 255, 255); font-size: 30px;">
+            <Bindings>
+                <ui:DataBinding property="text" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
+            </Bindings>
+        </ui:Label>
+    </ui:VisualElement>
+</ui:UXML>

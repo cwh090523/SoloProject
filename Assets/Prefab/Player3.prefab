@@ -671,6 +671,9 @@ MonoBehaviour:
   hitParticleLifetime: 2
   fireClip: {fileID: 8300000, guid: 4aa60f8082ae8cc4fa3eadc42ec7bcbe, type: 3}
   reloadClip: {fileID: 8300000, guid: bcf000f72259d0d4e9f3058a6d5476f2, type: 3}
+  dropMagazineClip: {fileID: 0}
+  inputMagazineClip: {fileID: 0}
+  lockMagazineClip: {fileID: 0}
   shellPrefab: {fileID: 7103081623043950048, guid: 418933a674648464dac052f0fc776194, type: 3}
   shellEjectPoint: {fileID: 612652173860485451}
   fallbackShellLocalOffset: {x: 0.18, y: -0.08, z: 0.25}
@@ -680,6 +683,7 @@ MonoBehaviour:
   shellRandomForce: 0.12
   shellTorque: 4
   shellLifetime: 4
+  maxShells: 15
 --- !u!114 &33039084186748239
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1024,6 +1028,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f7b7a8682fce514699efb1667948efa, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4269125211606204174}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 9f7b7a8682fce514699efb1667948efa, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7131565631342927161}
   m_SourcePrefab: {fileID: 100100000, guid: 9f7b7a8682fce514699efb1667948efa, type: 3}
 --- !u!1 &354053695518190512 stripped
 GameObject:
@@ -1073,6 +1080,19 @@ MonoBehaviour:
   aimStateName: AIMMING
   keepAimStateWhileAiming: 1
   crossFadeDuration: 0.12
+--- !u!114 &7131565631342927161
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 354053695518190512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fc3cb288fa14e1db3ee5bb8df3d0f0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponAnimationEvents
+  weapon: {fileID: 3799432949263782896}
 --- !u!4 &1126473135902093578 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9f7b7a8682fce514699efb1667948efa, type: 3}

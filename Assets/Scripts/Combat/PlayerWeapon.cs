@@ -57,6 +57,9 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float hitParticleLifetime = 2f;
     [SerializeField] private AudioClip fireClip;
     [SerializeField] private AudioClip reloadClip;
+    [SerializeField] private AudioClip dropMagazineClip;
+    [SerializeField] private AudioClip inputMagazineClip;
+    [SerializeField] private AudioClip lockMagazineClip;
 
     [Header("Shell Ejection")]
     [SerializeField] private GameObject shellPrefab;
@@ -68,8 +71,10 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float shellRandomForce = 0.12f;
     [SerializeField] private float shellTorque = 4f;
     [SerializeField] private float shellLifetime = 4f;
+    [SerializeField] private int maxShells = 15;
 
     private static readonly List<BulletHolePoolItem> BulletHolePool = new List<BulletHolePoolItem>();
+    private readonly List<ShellPoolItem> _shellPool = new List<ShellPoolItem>();
 
     private int _currentAmmo;
     private float _nextFireTime;
@@ -78,6 +83,7 @@ public class PlayerWeapon : MonoBehaviour
     private float _currentSpread;
     private float _attackHeldTime;
     private bool _isAiming;
+    private bool _reloadCompletedByEvent;
 
     public event Action Fired;
     public event Action ReloadStarted;
@@ -98,6 +104,7 @@ public class PlayerWeapon : MonoBehaviour
     {
         _currentAmmo = magazineSize;
         ResolveReferences();
+        PrewarmShellPool();
         // EnsureFeedbackObjects();
         AmmoChanged?.Invoke();
     }
@@ -128,6 +135,7 @@ public class PlayerWeapon : MonoBehaviour
         RecoverSpread();
         UpdateAutoFire();
         UpdateBulletHolePool();
+        UpdateShellPool();
 
         if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
             TryReload();
@@ -220,6 +228,41 @@ public class PlayerWeapon : MonoBehaviour
         StartCoroutine(ReloadRoutine());
     }
 
+    public void DropMag()
+    {
+        PlayOneShot(dropMagazineClip);
+    }
+
+    public void InputMag()
+    {
+        PlayOneShot(inputMagazineClip);
+    }
+
+    public void LockMag()
+    {
+        PlayOneShot(lockMagazineClip);
+    }
+
+    public void Reload()
+    {
+        if (!_isReloading || _reloadCompletedByEvent)
+            return;
+
+        int neededAmmo = magazineSize - _currentAmmo;
+        if (neededAmmo <= 0 || reserveAmmo <= 0)
+        {
+            _reloadCompletedByEvent = true;
+            return;
+        }
+
+        int loadedAmmo = Mathf.Min(neededAmmo, reserveAmmo);
+        _currentAmmo += loadedAmmo;
+        reserveAmmo -= loadedAmmo;
+        _reloadCompletedByEvent = true;
+
+        AmmoChanged?.Invoke();
+    }
+
     private float GetFinalDamage(RaycastHit hit, out bool isHeadshot)
     {
         isHeadshot = false;
@@ -261,19 +304,18 @@ public class PlayerWeapon : MonoBehaviour
     private IEnumerator ReloadRoutine()
     {
         _isReloading = true;
+        _reloadCompletedByEvent = false;
         ReloadStarted?.Invoke();
         PlayAction(reloadStateName, reloadTime);
         PlayReloadFeedback();
 
         yield return new WaitForSeconds(reloadTime);
 
-        int neededAmmo = magazineSize - _currentAmmo;
-        int loadedAmmo = Mathf.Min(neededAmmo, reserveAmmo);
-        _currentAmmo += loadedAmmo;
-        reserveAmmo -= loadedAmmo;
+        if (!_reloadCompletedByEvent)
+            Reload();
+
         _isReloading = false;
 
-        AmmoChanged?.Invoke();
         ReloadFinished?.Invoke();
     }
 
@@ -388,8 +430,7 @@ public class PlayerWeapon : MonoBehaviour
 
     private void PlayFireFeedback()
     {
-        if (audioSource != null && fireClip != null)
-            audioSource.PlayOneShot(fireClip);
+        PlayOneShot(fireClip);
 
         PlayMuzzleParticles();
 
@@ -413,9 +454,26 @@ public class PlayerWeapon : MonoBehaviour
             ? shellEjectPoint.position
             : reference.TransformPoint(fallbackShellLocalOffset);
 
+        ShellPoolItem poolItem = GetShellPoolItem();
+        if (poolItem == null)
+            return;
+
+        GameObject shell = poolItem.GameObject;
+        if (shell == null)
+            return;
+
+        poolItem.LastUsedTime = Time.time;
+        poolItem.IsActive = true;
+
         Quaternion rotation = shellEjectPoint != null ? shellEjectPoint.rotation : reference.rotation;
-        GameObject shell = Instantiate(shellPrefab, position, rotation);
+        shell.SetActive(false);
+        shell.name = shellPrefab.name;
+        shell.transform.SetPositionAndRotation(position, rotation);
+        shell.SetActive(true);
+
         Rigidbody shellRigidbody = EnsureShellRigidbody(shell);
+        shellRigidbody.linearVelocity = Vector3.zero;
+        shellRigidbody.angularVelocity = Vector3.zero;
 
         Vector3 ejectDirection = reference.right * shellEjectForce;
         ejectDirection += Vector3.up * shellUpwardForce;
@@ -424,7 +482,6 @@ public class PlayerWeapon : MonoBehaviour
 
         shellRigidbody.linearVelocity = ejectDirection;
         shellRigidbody.AddTorque(UnityEngine.Random.insideUnitSphere * shellTorque, ForceMode.Impulse);
-        Destroy(shell, shellLifetime);
     }
 
     private Transform GetShellReferenceTransform()
@@ -458,6 +515,100 @@ public class PlayerWeapon : MonoBehaviour
         return shellRigidbody;
     }
 
+    private void PrewarmShellPool()
+    {
+        if (shellPrefab == null)
+            return;
+
+        int poolLimit = Mathf.Max(1, maxShells);
+        while (_shellPool.Count < poolLimit)
+        {
+            ShellPoolItem item = CreateShellPoolItem();
+            if (item == null)
+                return;
+
+            _shellPool.Add(item);
+        }
+    }
+
+    private ShellPoolItem GetShellPoolItem()
+    {
+        int poolLimit = Mathf.Max(1, maxShells);
+
+        if (_shellPool.Count < poolLimit)
+        {
+            ShellPoolItem createdItem = CreateShellPoolItem();
+            if (createdItem == null)
+                return null;
+
+            _shellPool.Add(createdItem);
+            return createdItem;
+        }
+
+        ShellPoolItem oldestItem = null;
+        for (int i = 0; i < _shellPool.Count; i++)
+        {
+            ShellPoolItem item = _shellPool[i];
+            if (item.GameObject == null)
+            {
+                ShellPoolItem replacementItem = CreateShellPoolItem();
+                if (replacementItem == null)
+                    return null;
+
+                item.GameObject = replacementItem.GameObject;
+                item.IsActive = false;
+                item.LastUsedTime = 0f;
+                return item;
+            }
+
+            if (!item.IsActive)
+                return item;
+
+            if (oldestItem == null || item.LastUsedTime < oldestItem.LastUsedTime)
+                oldestItem = item;
+        }
+
+        return oldestItem;
+    }
+
+    private ShellPoolItem CreateShellPoolItem()
+    {
+        if (shellPrefab == null)
+            return null;
+
+        GameObject shell = Instantiate(shellPrefab);
+        shell.name = shellPrefab.name;
+        EnsureShellRigidbody(shell);
+        shell.SetActive(false);
+        return new ShellPoolItem(shell);
+    }
+
+    private void UpdateShellPool()
+    {
+        if (shellLifetime <= 0f)
+            return;
+
+        for (int i = 0; i < _shellPool.Count; i++)
+        {
+            ShellPoolItem item = _shellPool[i];
+            if (!item.IsActive || item.GameObject == null)
+                continue;
+
+            if (Time.time - item.LastUsedTime < shellLifetime)
+                continue;
+
+            Rigidbody shellRigidbody = item.GameObject.GetComponent<Rigidbody>();
+            if (shellRigidbody != null)
+            {
+                shellRigidbody.linearVelocity = Vector3.zero;
+                shellRigidbody.angularVelocity = Vector3.zero;
+            }
+
+            item.GameObject.SetActive(false);
+            item.IsActive = false;
+        }
+    }
+
     private void PlayMuzzleParticles()
     {
         if (muzzleParticles == null)
@@ -476,8 +627,13 @@ public class PlayerWeapon : MonoBehaviour
 
     private void PlayReloadFeedback()
     {
-        if (audioSource != null && reloadClip != null)
-            audioSource.PlayOneShot(reloadClip);
+        PlayOneShot(reloadClip);
+    }
+
+    private void PlayOneShot(AudioClip clip)
+    {
+        if (audioSource != null && clip != null)
+            audioSource.PlayOneShot(clip);
     }
 
     // private IEnumerator MuzzleFlashRoutine()
@@ -578,6 +734,18 @@ public class PlayerWeapon : MonoBehaviour
     private sealed class BulletHolePoolItem
     {
         public BulletHolePoolItem(GameObject gameObject)
+        {
+            GameObject = gameObject;
+        }
+
+        public GameObject GameObject;
+        public float LastUsedTime;
+        public bool IsActive;
+    }
+
+    private sealed class ShellPoolItem
+    {
+        public ShellPoolItem(GameObject gameObject)
         {
             GameObject = gameObject;
         }
