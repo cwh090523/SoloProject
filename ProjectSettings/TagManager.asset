@@ -14,8 +14,8 @@ TagManager:
   - Enemy
   - Player
   - MiniMapIcon
-  - 
-  - 
+  - Walkable
+  - NavBlocker
   - 
   - 
   - 

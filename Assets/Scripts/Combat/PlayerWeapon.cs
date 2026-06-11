@@ -56,7 +56,6 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float bulletHoleActiveTime = 12f;
     [SerializeField] private float hitParticleLifetime = 2f;
     [SerializeField] private AudioClip fireClip;
-    [SerializeField] private AudioClip reloadClip;
     [SerializeField] private AudioClip dropMagazineClip;
     [SerializeField] private AudioClip inputMagazineClip;
     [SerializeField] private AudioClip lockMagazineClip;
@@ -307,7 +306,6 @@ public class PlayerWeapon : MonoBehaviour
         _reloadCompletedByEvent = false;
         ReloadStarted?.Invoke();
         PlayAction(reloadStateName, reloadTime);
-        PlayReloadFeedback();
 
         yield return new WaitForSeconds(reloadTime);
 
@@ -625,26 +623,11 @@ public class PlayerWeapon : MonoBehaviour
         }
     }
 
-    private void PlayReloadFeedback()
-    {
-        PlayOneShot(reloadClip);
-    }
-
     private void PlayOneShot(AudioClip clip)
     {
         if (audioSource != null && clip != null)
             audioSource.PlayOneShot(clip);
     }
-
-    // private IEnumerator MuzzleFlashRoutine()
-    // {
-    //     if (muzzleFlashLight == null)
-    //         yield break;
-    //
-    //     muzzleFlashLight.intensity = 12f;
-    //     yield return new WaitForSeconds(muzzleFlashDuration);
-    //     muzzleFlashLight.intensity = 0f;
-    // }
 
     private void SpawnHitEffect(Vector3 point, Vector3 normal, bool isHeadshot, bool spawnBulletHole)
     {

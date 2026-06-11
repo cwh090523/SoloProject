@@ -1,31 +1,69 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement name="PlayerInfoContainer" data-source="project://database/Assets/Scripts/ScriptsObject/health%20view%20model.asset?fileID=11400000&amp;guid=063889825970545498a5a0619f823306&amp;type=2#health view model" style="flex-grow: 1; width: 500px; height: 180px; position: absolute; background-color: rgba(0, 0, 0, 0.75); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; padding-top: 5px; padding-right: 20px; padding-bottom: 5px; padding-left: 20px; left: 30px; top: 870px;">
-        <ui:Label text="Label" style="position: relative; color: rgb(255, 255, 255); font-size: 20px; -unity-font-style: bold;"/>
-        <ui:VisualElement name="BarTrack" style="background-color: rgb(83, 0, 0); height: 65px; position: relative; overflow: hidden;">
-            <ui:VisualElement name="BarFill" style="background-color: rgb(255, 0, 0); height: 100%; position: absolute; left: 0; top: 0; bottom: 0;">
+    <ui:VisualElement name="PlayerInfoContainer" data-source="project://database/Assets/Scripts/ScriptsObject/PlayerInfo%20view%20model.asset?fileID=11400000&amp;guid=063889825970545498a5a0619f823306&amp;type=2#PlayerInfo view model" style="position: absolute; left: 26px; bottom: 28px; width: 430px; height: 180px; background-color: rgba(12, 14, 16, 0.8); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgba(255, 255, 255, 0.18); border-right-color: rgba(255, 255, 255, 0.08); border-top-color: rgba(255, 255, 255, 0.18); border-bottom-color: rgba(0, 0, 0, 0.55); padding-left: 16px; padding-right: 16px; padding-top: 12px; padding-bottom: 13px; -unity-font-definition: url(&quot;project://database/Assets/Front/x12y12pxMaruMinyaHangul%20SDF%202.asset?fileID=11400000&amp;guid=a092c556b31066b459641e4b698c3373&amp;type=2#x12y12pxMaruMinyaHangul SDF 2&quot;);">
+        <ui:VisualElement name="HeaderRow" style="height: 32px; flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <ui:Label text="PLAYER" name="PlayerNameLabel" style="color: rgb(255, 255, 255); font-size: 21px; -unity-font-style: bold; letter-spacing: 0;">
                 <Bindings>
-                    <ui:DataBinding property="style.backgroundColor" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
-                    <ui:DataBinding property="style.width" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Float width Converter"/>
+                    <ui:DataBinding property="text" data-source-path="characterName" binding-mode="ToTarget"/>
                 </Bindings>
+            </ui:Label>
+            <ui:Label text="Healthy" name="HealthStateLabel" style="color: rgb(135, 230, 145); font-size: 18px; -unity-font-style: bold; -unity-text-align: middle-right; min-width: 112px; letter-spacing: 0;">
+                <Bindings>
+                    <ui:DataBinding property="text" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
+                    <ui:DataBinding property="style.color" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
+                </Bindings>
+            </ui:Label>
+        </ui:VisualElement>
+        <ui:VisualElement name="HealthGroup" style="height: 54px; margin-bottom: 11px;">
+            <ui:VisualElement name="HealthMetaRow" style="height: 24px; flex-direction: row; align-items: center; justify-content: space-between;">
+                <ui:Label text="체력" name="HealthLabel" style="color: rgb(230, 235, 238); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:VisualElement name="HealthValueRow" style="flex-direction: row; align-items: center;">
+                    <ui:Label text="150" name="CurrentHealthLabel" style="color: rgb(255, 255, 255); font-size: 19px; -unity-font-style: bold; -unity-text-align: middle-right; min-width: 46px; letter-spacing: 0;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="currentHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text=" / " style="color: rgba(255, 255, 255, 0.72); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    <ui:Label text="150" name="MaxHealthLabel" style="color: rgba(255, 255, 255, 0.86); font-size: 19px; -unity-font-style: bold; -unity-text-align: middle-left; min-width: 46px; letter-spacing: 0;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="maxHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement name="TextContainer" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; flex-direction: row-reverse; white-space: nowrap; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding-right: 18px; -unity-text-align: upper-right;">
-                <ui:Label text="Max" name="MaxHealthLabel" style="color: rgb(255, 255, 255); font-size: 30px; -unity-text-align: upper-center;">
+            <ui:VisualElement name="HealthBarTrack" style="height: 24px; margin-top: 6px; position: relative; overflow: hidden; background-color: rgba(73, 10, 14, 0.88); border-top-left-radius: 3px; border-top-right-radius: 3px; border-bottom-right-radius: 3px; border-bottom-left-radius: 3px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(0, 0, 0, 0.35); border-top-color: rgba(255, 255, 255, 0.12); border-bottom-color: rgba(0, 0, 0, 0.45);">
+                <ui:VisualElement name="HealthBarFill" style="height: 100%; width: 100%; position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(69, 214, 91); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;">
                     <Bindings>
-                        <ui:DataBinding property="text" data-source-path="maxHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                        <ui:DataBinding property="style.backgroundColor" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
+                        <ui:DataBinding property="style.width" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Float width Converter"/>
                     </Bindings>
-                </ui:Label>
-                <ui:Label text="/" style="font-size: 30px; -unity-text-outline-color: rgb(0, 0, 0); color: rgb(255, 255, 255); -unity-text-align: upper-center;"/>
-                <ui:Label text="Current&#10;" name="CurrentHealthLabel" style="color: rgb(255, 255, 255); font-size: 30px; -unity-text-align: upper-center;">
-                    <Bindings>
-                        <ui:DataBinding property="text" data-source-path="currentHealth" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
-                    </Bindings>
-                </ui:Label>
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:Label text="Healthy" name="HealthStateLabel" style="-unity-text-align: upper-center; -unity-font-style: bold; color: rgb(255, 255, 255); font-size: 30px;">
-            <Bindings>
-                <ui:DataBinding property="text" data-source-path="normalizedHealth" binding-mode="ToTarget" source-to-ui-converters="Health bar Converter"/>
-            </Bindings>
-        </ui:Label>
+        <ui:VisualElement name="StaminaGroup" style="height: 54px;">
+            <ui:VisualElement name="StaminaMetaRow" style="height: 24px; flex-direction: row; align-items: center; justify-content: space-between;">
+                <ui:Label text="지구력" name="StaminaLabel" style="color: rgb(230, 235, 238); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:VisualElement name="StaminaValueRow" style="flex-direction: row; align-items: center;">
+                    <ui:Label text="400" name="CurrentStaminaLabel" style="color: rgb(255, 255, 255); font-size: 19px; -unity-font-style: bold; -unity-text-align: middle-right; min-width: 54px; letter-spacing: 0;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="currentStamina" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                        </Bindings>
+                    </ui:Label>
+                    <ui:Label text=" / " style="color: rgba(255, 255, 255, 0.72); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    <ui:Label text="400" name="MaxStaminaLabel" style="color: rgba(255, 255, 255, 0.86); font-size: 19px; -unity-font-style: bold; -unity-text-align: middle-left; min-width: 54px; letter-spacing: 0;">
+                        <Bindings>
+                            <ui:DataBinding property="text" data-source-path="maxStamina" binding-mode="ToTarget" source-to-ui-converters="Int to String Converter"/>
+                        </Bindings>
+                    </ui:Label>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="StaminaBarTrack" style="height: 24px; margin-top: 6px; position: relative; overflow: hidden; background-color: rgba(74, 58, 12, 0.88); border-top-left-radius: 3px; border-top-right-radius: 3px; border-bottom-right-radius: 3px; border-bottom-left-radius: 3px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(0, 0, 0, 0.35); border-top-color: rgba(255, 255, 255, 0.12); border-bottom-color: rgba(0, 0, 0, 0.45);">
+                <ui:VisualElement name="StaminaBarFill" style="height: 100%; width: 100%; position: absolute; left: 0; top: 0; bottom: 0; background-color: rgb(245, 203, 48); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;">
+                    <Bindings>
+                        <ui:DataBinding property="style.backgroundColor" data-source-path="normalizedStamina" binding-mode="ToTarget" source-to-ui-converters="Stamina bar Converter"/>
+                        <ui:DataBinding property="style.width" data-source-path="normalizedStamina" binding-mode="ToTarget" source-to-ui-converters="Float width Converter"/>
+                    </Bindings>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

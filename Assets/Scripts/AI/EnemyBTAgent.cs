@@ -1,39 +1,70 @@
 using System.Collections;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+
+public interface IEnemyTargetProvider
+{
+    bool TryGetTarget(out Transform target, out Health targetHealth);
+}
+
+public interface IEnemyMovementBlocker
+{
+    bool IsMovementBlocked { get; }
+}
+
+public interface IEnemySpeedModifier
+{
+    float SpeedModifier { get; }
+}
+
+public interface IEnemyAttackHandler
+{
+    void Attack(Health targetHealth, float damage);
+}
+
+public interface IEnemyAnimationDriver
+{
+    void PlayIdle();
+    void PlayMove();
+    void PlayAttack(string stateName);
+    void PlayDeath();
+}
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Health))]
 public class EnemyBTAgent : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private Transform target;
+    [Header("References")] [SerializeField]
+    private Transform target;
+
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private Animator animator;
     [SerializeField] private Health health;
-    [SerializeField] private DamageHitReaction hitReaction;
 
-    [Header("Detection")]
-    [SerializeField] private float detectionRange = 45f;
+    [Header("Target")] [SerializeField] private string playerObjectName = "Player3";
+    [SerializeField] private bool requireAliveTarget;
+    [SerializeField] private float targetNavMeshSampleRadius = 20f;
+    [SerializeField] private bool allowPartialPathToTarget = true;
+
+    [Header("Movement")] [SerializeField] private float detectionRange = 45f;
     [SerializeField] private bool ignoreDetectionRange = true;
-    [SerializeField] private float attackRange = 1.6f;
     [SerializeField] private float stoppingDistance = 1.25f;
     [SerializeField] private float rotationSpeed = 720f;
-    [SerializeField] private bool requireAliveTarget = false;
-
-    [Header("NavMesh Tuning")]
+    [SerializeField] private float agentSpeed = 8f;
     [SerializeField] private float agentAcceleration = 80f;
     [SerializeField] private float agentAngularSpeed = 720f;
-    [SerializeField] private float destinationRefreshInterval = 0.1f;
-    [SerializeField] private bool clearVelocityOnStop = true;
+    [SerializeField] private float destinationRefreshInterval = 0.15f;
+    [SerializeField] private float destinationMoveThreshold = 0.35f;
 
-    [Header("Off Mesh Link Jump")]
-    [SerializeField] private string jumpStateName = "Jump";
+    [Header("Off Mesh Link Jump")] [SerializeField]
+    private string jumpStateName = "Jump";
+
     [SerializeField] private float jumpDuration = 0.65f;
     [SerializeField] private float jumpHeight = 1.2f;
     [SerializeField] private bool faceJumpDirection = true;
 
-    [Header("Attack")]
+    [Header("Attack")] [SerializeField] private float attackRange = 1.6f;
     [SerializeField] private float attackDamage = 10f;
     [SerializeField] private float attackCooldown = 1.25f;
     [SerializeField] private float attackHitDelay = 0.35f;
@@ -43,38 +74,45 @@ public class EnemyBTAgent : MonoBehaviour
     [SerializeField] private LayerMask attackLineOfSightMask = ~0;
     [SerializeField] private float attackRayStartHeight = 1.2f;
     [SerializeField] private float targetRayHeight = 1f;
-    [SerializeField] private bool lockPositionDuringAttack = true;
     [SerializeField] private string[] attackStateNames = { "Zombie Attack1", "Zombie Attack2", "Zombie Attack3" };
 
-    [Header("Animation")]
-    [SerializeField] private string idleStateName = "IDLE";
+    [Header("Animation")] [SerializeField] private string idleStateName = "IDLE";
     [SerializeField] private string moveStateName = "RUNNING";
     [SerializeField] private string deathStateName = "DEATH";
     [SerializeField] private float animationCrossFade = 0.08f;
     [SerializeField] private bool disableAnimatorRootMotion = true;
 
-    [Header("Death")]
-    [SerializeField] private bool disableCollidersOnDeath = true;
+    [Header("Death")] [SerializeField] private bool disableCollidersOnDeath = true;
     [SerializeField] private Collider[] collidersToDisableOnDeath;
+
+    [Header("Debug")] [SerializeField] private bool debugMovementState = true;
+    [SerializeField] private float debugLogInterval = 1f;
 
     private BTNode _root;
     private Health _targetHealth;
+    private IEnemyTargetProvider[] _targetProviders;
+    private IEnemyMovementBlocker[] _movementBlockers;
+    private IEnemyAttackHandler[] _attackHandlers;
+    private IEnemyAnimationDriver[] _animationDrivers;
+    private IEnemySpeedModifier[] _speedModifiers;
     private Coroutine _attackRoutine;
     private Coroutine _jumpRoutine;
+    private NavMeshPath _pathProbe;
+    private Vector3 _lastDestination;
+    private string _currentAnimationState;
     private float _nextAttackTime;
     private float _nextDestinationRefreshTime;
-    private float _actionLockedUntil;
-    private string _currentStateName;
-    private Vector3 _attackLockPosition;
-    private bool _isDead;
-    private bool _isHitReacting;
-    private bool _isAttackPositionLocked;
-    private bool _isTraversingLink;
+    private float _nextDebugLogTime;
+    private bool _hasDestination;
+    private bool _isAttacking;
+    private bool _isJumping;
     private bool _deathAnimationPlayed;
+    private bool _wasMovementBlocked;
 
     private void Awake()
     {
         ResolveReferences();
+        ResolveExtensions();
         BuildTree();
     }
 
@@ -84,16 +122,9 @@ public class EnemyBTAgent : MonoBehaviour
         {
             health.Died += HandleDied;
             health.ResetHealth += HandleResetHealth;
-
-            if (!health.IsDead)
-                HandleResetHealth();
         }
 
-        if (hitReaction != null)
-        {
-            hitReaction.ReactionStarted += HandleHitReactionStarted;
-            hitReaction.ReactionFinished += HandleHitReactionFinished;
-        }
+        HandleResetHealth();
     }
 
     private void OnDisable()
@@ -103,34 +134,21 @@ public class EnemyBTAgent : MonoBehaviour
             health.Died -= HandleDied;
             health.ResetHealth -= HandleResetHealth;
         }
-
-        if (hitReaction != null)
-        {
-            hitReaction.ReactionStarted -= HandleHitReactionStarted;
-            hitReaction.ReactionFinished -= HandleHitReactionFinished;
-        }
     }
 
     private void Update()
     {
         ResolveTarget();
+        RefreshAnimationCacheAfterMovementBlock();
 
-        if (_isHitReacting)
+        if (_isJumping)
         {
-            StopAgent();
+            LogDebugState();
             return;
         }
 
-        if (_isTraversingLink)
-            return;
-
         _root?.Tick();
-    }
-
-    private void LateUpdate()
-    {
-        if (_isAttackPositionLocked)
-            LockAttackPosition();
+        LogDebugState();
     }
 
     private void ResolveReferences()
@@ -144,23 +162,61 @@ public class EnemyBTAgent : MonoBehaviour
         if (health == null)
             health = GetComponent<Health>();
 
-        if (hitReaction == null)
-            hitReaction = GetComponent<DamageHitReaction>();
-
-        if (collidersToDisableOnDeath == null || collidersToDisableOnDeath.Length == 0)
-            collidersToDisableOnDeath = GetComponentsInChildren<Collider>();
+        CacheDeathColliders();
 
         if (animator != null && disableAnimatorRootMotion)
             animator.applyRootMotion = false;
 
         if (agent != null)
         {
+            agent.speed = agentSpeed;
             agent.stoppingDistance = stoppingDistance;
             agent.acceleration = agentAcceleration;
             agent.angularSpeed = agentAngularSpeed;
-            agent.autoBraking = true;
             agent.autoTraverseOffMeshLink = false;
+            agent.autoBraking = true;
+            agent.updateRotation = false;
         }
+
+        _pathProbe ??= new NavMeshPath();
+    }
+
+    private void ResolveExtensions()
+    {
+        MonoBehaviour[] behaviours = GetComponents<MonoBehaviour>();
+        _targetProviders = CollectInterfaces<IEnemyTargetProvider>(behaviours);
+        _movementBlockers = CollectInterfaces<IEnemyMovementBlocker>(behaviours);
+        _attackHandlers = CollectInterfaces<IEnemyAttackHandler>(behaviours);
+        _animationDrivers = CollectInterfaces<IEnemyAnimationDriver>(behaviours);
+        _speedModifiers = CollectInterfaces<IEnemySpeedModifier>(behaviours);
+    }
+
+    private void CacheDeathColliders()
+    {
+        if (!disableCollidersOnDeath)
+            return;
+
+        collidersToDisableOnDeath = GetComponentsInChildren<Collider>();
+    }
+
+    private T[] CollectInterfaces<T>(MonoBehaviour[] behaviours)
+    {
+        int count = 0;
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            if (behaviours[i] != this && behaviours[i] is T)
+                count++;
+        }
+
+        T[] result = new T[count];
+        int index = 0;
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            if (behaviours[i] != this && behaviours[i] is T extension)
+                result[index++] = extension;
+        }
+
+        return result;
     }
 
     private void BuildTree()
@@ -169,6 +225,10 @@ public class EnemyBTAgent : MonoBehaviour
             new BTSequence(
                 new BTCondition(IsDead),
                 new BTAction(DoDeath)
+            ),
+            new BTSequence(
+                new BTCondition(IsActionLocked),
+                new BTAction(DoActionLocked)
             ),
             new BTSequence(
                 new BTCondition(HasTarget),
@@ -186,22 +246,43 @@ public class EnemyBTAgent : MonoBehaviour
 
     private void ResolveTarget()
     {
+        for (int i = 0; i < _targetProviders.Length; i++)
+        {
+            if (_targetProviders[i].TryGetTarget(out Transform providedTarget, out Health providedHealth))
+            {
+                target = providedTarget;
+                _targetHealth = providedHealth;
+                return;
+            }
+        }
+
         if (target != null && _targetHealth != null)
             return;
 
-        PlayerController player = FindFirstObjectByType<PlayerController>();
-        if (player == null)
-            return;
+        GameObject playerObject = GameObject.Find(playerObjectName);
+        if (playerObject != null)
+        {
+            target = playerObject.transform;
+            _targetHealth = playerObject.GetComponent<Health>();
+        }
 
-        target = player.transform;
-        _targetHealth = player.GetComponent<Health>();
-        if (_targetHealth == null)
-            _targetHealth = player.GetComponentInParent<Health>();
+        if (target == null || _targetHealth == null)
+        {
+            PlayerController player = FindFirstObjectByType<PlayerController>();
+            if (player == null)
+                return;
+
+            target = player.transform;
+            _targetHealth = player.GetComponent<Health>();
+        }
+
+        if (_targetHealth == null && target != null)
+            _targetHealth = target.GetComponentInParent<Health>();
     }
 
     private bool IsDead()
     {
-        return _isDead || health == null || health.IsDead;
+        return health == null || health.IsDead;
     }
 
     private bool HasTarget()
@@ -212,17 +293,17 @@ public class EnemyBTAgent : MonoBehaviour
         return !requireAliveTarget || !_targetHealth.IsDead;
     }
 
+    private bool IsActionLocked()
+    {
+        return _isAttacking || IsMovementBlocked();
+    }
+
     private bool IsTargetInDetectionRange()
     {
         if (ignoreDetectionRange)
             return true;
 
-        return GetSqrDistanceToTarget() <= detectionRange * detectionRange;
-    }
-
-    private bool IsTargetInAttackRange()
-    {
-        return GetSqrDistanceToTarget() <= attackRange * attackRange;
+        return GetHorizontalSqrDistanceToTarget() <= detectionRange * detectionRange;
     }
 
     private bool CanAttackTarget()
@@ -237,17 +318,22 @@ public class EnemyBTAgent : MonoBehaviour
         return !requireAttackLineOfSight || HasClearAttackLine();
     }
 
+    private bool IsTargetInAttackRange()
+    {
+        return GetSqrDistanceToTarget() <= attackRange * attackRange;
+    }
+
     private bool HasClearAttackLine()
     {
         Vector3 start = transform.position + Vector3.up * attackRayStartHeight;
         Vector3 end = target.position + Vector3.up * targetRayHeight;
         Vector3 direction = end - start;
         float distance = direction.magnitude;
-
         if (distance <= 0.0001f)
             return true;
 
-        RaycastHit[] hits = Physics.RaycastAll(start, direction / distance, distance, attackLineOfSightMask, QueryTriggerInteraction.Ignore);
+        RaycastHit[] hits = Physics.RaycastAll(start, direction / distance, distance, attackLineOfSightMask,
+            QueryTriggerInteraction.Ignore);
         for (int i = 0; i < hits.Length; i++)
         {
             Transform hitTransform = hits[i].collider.transform;
@@ -260,49 +346,138 @@ public class EnemyBTAgent : MonoBehaviour
         return true;
     }
 
-    private float GetSqrDistanceToTarget()
-    {
-        if (target == null)
-            return float.MaxValue;
-
-        Vector3 offset = target.position - transform.position;
-        offset.y = 0f;
-        return offset.sqrMagnitude;
-    }
-
     private BTStatus DoIdle()
     {
         StopAgent();
-        PlayState(idleStateName);
+        PlayIdle();
         return BTStatus.Running;
     }
 
     private BTStatus DoChase()
     {
-        if (agent == null || target == null)
-            return BTStatus.Failure;
+        // if (IsMovementBlocked())
+        // {
+        //     StopAgent();
+        //     PlayIdle();
+        //     return BTStatus.Running;
+        // }
 
-        if (agent.enabled && agent.isOnNavMesh)
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
         {
-            if (agent.isOnOffMeshLink)
-            {
-                StartOffMeshLinkJump();
-                return BTStatus.Running;
-            }
-
-            agent.isStopped = false;
-            agent.stoppingDistance = stoppingDistance;
-
-            if (Time.time >= _nextDestinationRefreshTime)
-            {
-                agent.SetDestination(target.position);
-                _nextDestinationRefreshTime = Time.time + destinationRefreshInterval;
-            }
+            PlayIdle();
+            return BTStatus.Running;
         }
 
-        FaceTarget();
-        PlayState(moveStateName);
+        if (agent.isOnOffMeshLink)
+        {
+            StartOffMeshLinkJump();
+            return BTStatus.Running;
+        }
+
+        agent.isStopped = false;
+        agent.speed = agentSpeed * GetSpeedMultiplier();
+        agent.stoppingDistance = stoppingDistance;
+
+        if (Time.time >= _nextDestinationRefreshTime)
+        {
+            TrySetDestination();
+            _nextDestinationRefreshTime = Time.time + destinationRefreshInterval;
+        }
+
+        FaceMoveDirection();
+        PlayMove();
         return BTStatus.Running;
+    }
+
+    private BTStatus DoAttack()
+    {
+        StopAgent();
+        FaceTarget();
+
+        if (Time.time >= _nextAttackTime && _attackRoutine == null)
+        {
+            _nextAttackTime = Time.time + attackCooldown;
+            _attackRoutine = StartCoroutine(AttackRoutine());
+        }
+
+        return BTStatus.Running;
+    }
+
+    private BTStatus DoActionLocked()
+    {
+        StopAgent();
+        FaceTarget();
+        return BTStatus.Running;
+    }
+
+    private IEnumerator AttackRoutine()
+    {
+        _isAttacking = true;
+
+        string stateName = GetAttackStateName();
+        PlayAttack(stateName);
+
+        yield return new WaitForSeconds(Mathf.Max(0f, attackHitDelay));
+
+        if (!IsDead() && HasTarget() && CanAttackTarget())
+            ExecuteAttack();
+
+        float remainingLockTime = Mathf.Max(0f, attackAnimationLockTime - attackHitDelay);
+        if (remainingLockTime > 0f)
+            yield return new WaitForSeconds(remainingLockTime);
+
+        _isAttacking = false;
+        PlayIdle();
+        _attackRoutine = null;
+    }
+
+    private BTStatus DoDeath()
+    {
+        StopAgent();
+
+        if (!_deathAnimationPlayed)
+        {
+            DisableDeathColliders();
+            PlayDeath();
+            _deathAnimationPlayed = true;
+        }
+
+        return BTStatus.Running;
+    }
+
+    private void TrySetDestination()
+    {
+        if (!TryGetDestinationOnNavMesh(out Vector3 destination, out NavMeshPathStatus pathStatus))
+            return;
+
+
+        if (_hasDestination && (destination - _lastDestination).sqrMagnitude <
+            destinationMoveThreshold * destinationMoveThreshold)
+            return;
+
+        if (agent.SetDestination(destination))
+        {
+            _lastDestination = destination;
+            _hasDestination = true;
+        }
+    }
+
+    private bool TryGetDestinationOnNavMesh(out Vector3 destination, out NavMeshPathStatus pathStatus)
+    {
+        destination = target.position;
+        pathStatus = NavMeshPathStatus.PathInvalid;
+
+        if (!NavMesh.SamplePosition(target.position, out NavMeshHit hit, targetNavMeshSampleRadius, agent.areaMask))
+            return false;
+
+        destination = hit.position;
+        _pathProbe ??= new NavMeshPath();
+        if (!agent.CalculatePath(destination, _pathProbe))
+            return false;
+
+        pathStatus = _pathProbe.status;
+        return pathStatus == NavMeshPathStatus.PathComplete ||
+               allowPartialPathToTarget && pathStatus == NavMeshPathStatus.PathPartial;
     }
 
     private void StartOffMeshLinkJump()
@@ -315,13 +490,16 @@ public class EnemyBTAgent : MonoBehaviour
 
     private IEnumerator TraverseOffMeshLinkRoutine()
     {
-        _isTraversingLink = true;
-        _currentStateName = string.Empty;
+        _isJumping = true;
+        _hasDestination = false;
 
         OffMeshLinkData linkData = agent.currentOffMeshLinkData;
         Vector3 startPosition = transform.position;
         Vector3 endPosition = linkData.endPos;
         endPosition.y += agent.baseOffset;
+
+        NavMeshLinkSplineHeight splineHeight =
+            NavMeshLinkSplineHeight.FindBest(startPosition, endPosition, out bool reverseSpline);
 
         agent.isStopped = true;
         agent.velocity = Vector3.zero;
@@ -329,22 +507,31 @@ public class EnemyBTAgent : MonoBehaviour
         agent.updateRotation = false;
 
         if (faceJumpDirection)
-            FaceDirection(endPosition - startPosition, 1f);
+            RotateTowardsFlatDirection(endPosition - startPosition);
 
-        PlayState(jumpStateName, true);
+        PlayJump();
 
         float elapsed = 0f;
         float duration = Mathf.Max(0.05f, jumpDuration);
-        while (elapsed < duration && !IsDead() && !_isHitReacting)
+        while (elapsed < duration && !IsDead())
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
-            float arc = Mathf.Sin(t * Mathf.PI) * jumpHeight;
-            Vector3 nextPosition = Vector3.Lerp(startPosition, endPosition, t) + Vector3.up * arc;
+            Vector3 nextPosition = Vector3.Lerp(startPosition, endPosition, t);
+            float linearY = nextPosition.y;
+
+            if (splineHeight != null && splineHeight.TrySampleY(t, reverseSpline, linearY, out float splineY))
+            {
+                nextPosition.y = splineY;
+            }
+            else
+            {
+                float arc = Mathf.Sin(t * Mathf.PI) * jumpHeight;
+                nextPosition.y = linearY + arc;
+            }
 
             transform.position = nextPosition;
             agent.nextPosition = nextPosition;
-
             yield return null;
         }
 
@@ -356,117 +543,117 @@ public class EnemyBTAgent : MonoBehaviour
         }
 
         agent.updatePosition = true;
-        agent.updateRotation = true;
+        agent.updateRotation = false;
         agent.isStopped = false;
+        agent.velocity = Vector3.zero;
 
-        _isTraversingLink = false;
+        _isJumping = false;
         _jumpRoutine = null;
-        _currentStateName = string.Empty;
+        _currentAnimationState = string.Empty;
     }
 
-    private void CancelOffMeshLinkJump()
+    private void ExecuteAttack()
     {
-        if (_jumpRoutine != null)
+        if (_attackHandlers.Length > 0)
         {
-            StopCoroutine(_jumpRoutine);
-            _jumpRoutine = null;
+            for (int i = 0; i < _attackHandlers.Length; i++)
+                _attackHandlers[i].Attack(_targetHealth, attackDamage);
+
+            return;
         }
 
-        _isTraversingLink = false;
+        _targetHealth.TakeDamage(attackDamage);
+    }
 
-        if (agent == null || !agent.enabled)
+    private bool IsMovementBlocked()
+    {
+        for (int i = 0; i < _movementBlockers.Length; i++)
+        {
+            if (_movementBlockers[i].IsMovementBlocked)
+                return true;
+        }
+
+        return false;
+    }
+
+    private float GetSpeedMultiplier()
+    {
+        float multiplier = 1f;
+        for (int i = 0; i < _speedModifiers.Length; i++)
+        {
+            multiplier *= Mathf.Clamp01(_speedModifiers[i].SpeedModifier);
+        }
+
+        return multiplier;
+    }
+
+    private void RefreshAnimationCacheAfterMovementBlock()
+    {
+        bool isMovementBlocked = IsMovementBlocked();
+        if (_wasMovementBlocked && !isMovementBlocked)
+            _currentAnimationState = string.Empty;
+
+        _wasMovementBlocked = isMovementBlocked;
+    }
+
+    private float GetSqrDistanceToTarget()
+    {
+        if (target == null)
+            return float.MaxValue;
+
+        return (target.position - transform.position).sqrMagnitude;
+    }
+
+    private float GetHorizontalSqrDistanceToTarget()
+    {
+        if (target == null)
+            return float.MaxValue;
+
+        Vector3 offset = target.position - transform.position;
+        offset.y = 0f;
+        return offset.sqrMagnitude;
+    }
+
+    private void FaceTarget()
+    {
+        if (target == null)
             return;
 
-        agent.updatePosition = true;
-        agent.updateRotation = true;
-
-        if (agent.isOnNavMesh)
-        {
-            agent.Warp(transform.position);
-            agent.isStopped = true;
-            agent.velocity = Vector3.zero;
-        }
+        RotateTowardsFlatDirection(target.position - transform.position);
     }
 
-    private BTStatus DoAttack()
+    private void FaceMoveDirection()
     {
-        StopAgent();
-        FaceTarget();
-
-        if (Time.time < _actionLockedUntil)
-            return BTStatus.Running;
-
-        if (Time.time >= _nextAttackTime && _attackRoutine == null)
-        {
-            _nextAttackTime = Time.time + attackCooldown;
-            _attackRoutine = StartCoroutine(AttackRoutine());
-        }
-
-        return BTStatus.Running;
-    }
-
-    private BTStatus DoDeath()
-    {
-        StopAgent();
-
-        if (!_deathAnimationPlayed && !string.IsNullOrWhiteSpace(deathStateName))
-        {
-            PlayState(deathStateName, true, true);
-            _deathAnimationPlayed = true;
-        }
-
-        return BTStatus.Running;
-    }
-
-    private IEnumerator AttackRoutine()
-    {
-        BeginAttackPositionLock();
-
-        string attackStateName = GetAttackStateName();
-        _actionLockedUntil = Time.time + attackAnimationLockTime;
-        PlayState(attackStateName, true);
-
-        yield return new WaitForSeconds(attackHitDelay);
-
-        if (!IsDead() && HasTarget() && CanAttackTarget())
-            _targetHealth.TakeDamage(attackDamage);
-
-        float remainingLockTime = Mathf.Max(0f, _actionLockedUntil - Time.time);
-        if (remainingLockTime > 0f)
-            yield return new WaitForSeconds(remainingLockTime);
-
-        EndAttackPositionLock();
-        _attackRoutine = null;
-    }
-
-    private void BeginAttackPositionLock()
-    {
-        if (!lockPositionDuringAttack)
+        if (agent == null)
             return;
 
-        _attackLockPosition = transform.position;
-        _isAttackPositionLocked = true;
-        LockAttackPosition();
+        Vector3 direction = agent.desiredVelocity;
+        if (direction.sqrMagnitude <= 0.01f && agent.hasPath)
+            direction = agent.steeringTarget - transform.position;
+
+        RotateTowardsFlatDirection(direction);
     }
 
-    private void EndAttackPositionLock()
+    private void RotateTowardsFlatDirection(Vector3 direction)
     {
-        if (!_isAttackPositionLocked)
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.0001f)
             return;
 
-        LockAttackPosition();
-        _isAttackPositionLocked = false;
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        transform.rotation =
+            Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
     }
 
-    private void LockAttackPosition()
+    private void StopAgent()
     {
-        transform.position = _attackLockPosition;
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            return;
 
-        if (agent != null && agent.enabled && agent.isOnNavMesh)
-        {
-            agent.nextPosition = _attackLockPosition;
-            agent.velocity = Vector3.zero;
-        }
+        agent.isStopped = true;
+        agent.ResetPath();
+        agent.velocity = Vector3.zero;
+        _hasDestination = false;
     }
 
     private string GetAttackStateName()
@@ -477,88 +664,99 @@ public class EnemyBTAgent : MonoBehaviour
         return attackStateNames[Random.Range(0, attackStateNames.Length)];
     }
 
-    private void FaceTarget()
+    private void PlayIdle()
     {
-        if (target == null)
+        if (TryPlayExtensionAnimation(driver => driver.PlayIdle()))
             return;
 
-        Vector3 direction = target.position - transform.position;
-        direction.y = 0f;
-        if (direction.sqrMagnitude <= 0.0001f)
-            return;
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        CrossFade(idleStateName);
     }
 
-    private void FaceDirection(Vector3 direction, float lerp)
+    private void PlayMove()
     {
-        direction.y = 0f;
-        if (direction.sqrMagnitude <= 0.0001f)
+        if (TryPlayExtensionAnimation(driver => driver.PlayMove()))
             return;
 
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Mathf.Clamp01(lerp));
+        CrossFade(moveStateName);
     }
 
-    private void StopAgent()
+    private void PlayAttack(string stateName)
     {
-        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+        if (TryPlayExtensionAnimation(driver => driver.PlayAttack(stateName)))
             return;
 
-        agent.isStopped = true;
-        agent.ResetPath();
-
-        if (clearVelocityOnStop)
-            agent.velocity = Vector3.zero;
+        CrossFade(stateName);
     }
 
-    private void PlayState(string stateName, bool force = false, bool ignoreHitReaction = false)
+    private void PlayDeath()
+    {
+        if (TryPlayExtensionAnimation(driver => driver.PlayDeath()))
+            return;
+
+        CrossFade(deathStateName);
+    }
+
+    private void PlayJump()
+    {
+        CrossFade(jumpStateName);
+    }
+
+    private bool TryPlayExtensionAnimation(System.Action<IEnemyAnimationDriver> play)
+    {
+        if (_animationDrivers.Length == 0)
+            return false;
+
+        for (int i = 0; i < _animationDrivers.Length; i++)
+            play(_animationDrivers[i]);
+
+        return true;
+    }
+
+    private void CrossFade(string stateName)
     {
         if (animator == null || string.IsNullOrWhiteSpace(stateName))
             return;
 
-        if (!ignoreHitReaction && (_isHitReacting || (hitReaction != null && hitReaction.IsReacting)))
+        if (_currentAnimationState == stateName)
             return;
 
-        if (!force && Time.time < _actionLockedUntil)
-            return;
-
-        if (!force && _currentStateName == stateName)
-            return;
-
-        _currentStateName = stateName;
+        _currentAnimationState = stateName;
         animator.CrossFadeInFixedTime(stateName, animationCrossFade, 0, 0f);
     }
 
     private void HandleDied()
     {
-        _isDead = true;
-        _isHitReacting = false;
-        _actionLockedUntil = 0f;
-        _currentStateName = string.Empty;
-        _deathAnimationPlayed = false;
-
         if (_attackRoutine != null)
         {
             StopCoroutine(_attackRoutine);
             _attackRoutine = null;
         }
 
-        if (hitReaction != null)
-            hitReaction.CancelReaction();
+        if (_jumpRoutine != null)
+        {
+            StopCoroutine(_jumpRoutine);
+            _jumpRoutine = null;
+        }
 
-        CancelOffMeshLinkJump();
+        DamageHitReaction[] hitReactions = GetComponents<DamageHitReaction>();
+        for (int i = 0; i < hitReactions.Length; i++)
+            hitReactions[i].CancelReaction();
 
-        EndAttackPositionLock();
+        _isJumping = false;
+        _isAttacking = false;
         StopAgent();
         DisableDeathColliders();
+        _deathAnimationPlayed = false;
+        _currentAnimationState = string.Empty;
+    }
 
-        if (!string.IsNullOrWhiteSpace(deathStateName))
-        {
-            PlayState(deathStateName, true, true);
-            _deathAnimationPlayed = true;
-        }
+    private void HandleResetHealth()
+    {
+        _deathAnimationPlayed = false;
+        _isJumping = false;
+        _isAttacking = false;
+        _currentAnimationState = string.Empty;
+        EnableDeathColliders();
     }
 
     private void DisableDeathColliders()
@@ -585,37 +783,18 @@ public class EnemyBTAgent : MonoBehaviour
         }
     }
 
-    private void HandleResetHealth()
+    private void LogDebugState()
     {
-        _isDead = false;
-        _isHitReacting = false;
-        _isAttackPositionLocked = false;
-        _isTraversingLink = false;
-        _deathAnimationPlayed = false;
-        _currentStateName = string.Empty;
-        EnableDeathColliders();
-    }
+        if (!debugMovementState || Time.time < _nextDebugLogTime)
+            return;
 
-    private void HandleHitReactionStarted()
-    {
-        _isHitReacting = true;
-        _actionLockedUntil = 0f;
-        _currentStateName = string.Empty;
+        _nextDebugLogTime = Time.time + Mathf.Max(0.1f, debugLogInterval);
 
-        if (_attackRoutine != null)
-        {
-            StopCoroutine(_attackRoutine);
-            _attackRoutine = null;
-        }
+        string targetText = target != null ? $"{target.name} {target.position}" : "null";
+        string agentText = agent != null
+            ? $"onNavMesh={agent.isOnNavMesh}, stopped={agent.isStopped}, hasPath={agent.hasPath}, status={agent.pathStatus}, velocity={agent.velocity.magnitude:0.00}"
+            : "null";
 
-        CancelOffMeshLinkJump();
-        EndAttackPositionLock();
-        StopAgent();
-    }
-
-    private void HandleHitReactionFinished()
-    {
-        _isHitReacting = false;
-        _currentStateName = string.Empty;
+        Debug.Log($"{name} BT | target={targetText} | agent={agentText}", this);
     }
 }

@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class DamageHitReaction : MonoBehaviour
+public class DamageHitReaction : MonoBehaviour,  IEnemySpeedModifier
 {
     [SerializeField] private Animator animator;
     [SerializeField] private string idleStateName = "IDLE";
@@ -15,6 +15,7 @@ public class DamageHitReaction : MonoBehaviour
     [SerializeField] private bool lockAnimatorLocalTransform = true;
     [SerializeField] private bool lockOwnerLocalTransform;
     [SerializeField] private bool playIdleOnEnable;
+    [SerializeField] private float hitSpeedMultiplier = 0.35f;
 
     private Coroutine _returnRoutine;
     private Transform _animatorTransform;
@@ -23,17 +24,21 @@ public class DamageHitReaction : MonoBehaviour
     private Vector3 _baseOwnerLocalPosition;
     private Quaternion _baseOwnerLocalRotation;
     private NavMeshAgent _ownerAgent;
+    private Health _ownerHealth;
 
     public event Action ReactionStarted;
     public event Action ReactionFinished;
 
     public bool IsReacting => _returnRoutine != null;
+    // public bool IsMovementBlocked => IsReacting;
+    public float SpeedModifier => IsReacting ? hitSpeedMultiplier : 1f;
 
     private void Awake()
     {
         if (animator == null)
             animator = GetComponentInChildren<Animator>();
 
+        _ownerHealth = GetComponent<Health>();
         CacheOwnerTransform();
         CacheAnimatorTransform();
     }
@@ -87,7 +92,9 @@ public class DamageHitReaction : MonoBehaviour
         float waitTime = GetCurrentStateRemainingTime(hitStateName);
         yield return new WaitForSeconds(waitTime);
 
-        PlayIdle();
+        // if (_ownerHealth == null || !_ownerHealth.IsDead)
+        //     PlayIdle();
+
         _returnRoutine = null;
         ReactionFinished?.Invoke();
     }
@@ -158,4 +165,6 @@ public class DamageHitReaction : MonoBehaviour
         transform.localPosition = _baseOwnerLocalPosition;
         transform.localRotation = _baseOwnerLocalRotation;
     }
+
+
 }
