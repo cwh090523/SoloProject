@@ -1,4 +1,6 @@
 using System.Collections;
+using DefaultNamespace;
+using Unity.AppUI.MVVM;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
@@ -84,6 +86,7 @@ public class EnemyBTAgent : MonoBehaviour
 
     [Header("Death")] [SerializeField] private bool disableCollidersOnDeath = true;
     [SerializeField] private Collider[] collidersToDisableOnDeath;
+    [SerializeField] private GameStateTracker statesTracker;
 
     [Header("Debug")] [SerializeField] private bool debugMovementState = true;
     [SerializeField] private float debugLogInterval = 1f;
@@ -161,6 +164,8 @@ public class EnemyBTAgent : MonoBehaviour
 
         if (health == null)
             health = GetComponent<Health>();
+        if (statesTracker == null)
+            statesTracker = FindFirstObjectByType<GameStateTracker>();
 
         CacheDeathColliders();
 
@@ -737,6 +742,8 @@ public class EnemyBTAgent : MonoBehaviour
             StopCoroutine(_jumpRoutine);
             _jumpRoutine = null;
         }
+        if(statesTracker != null)
+            statesTracker.AddKill();
 
         DamageHitReaction[] hitReactions = GetComponents<DamageHitReaction>();
         for (int i = 0; i < hitReactions.Length; i++)

@@ -1289,7 +1289,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7071068, z: -0.7071068, w: 0}
   m_LocalPosition: {x: 0, y: 16.698477, z: 0}
-  m_LocalScale: {x: 8, y: 8, z: 8}
+  m_LocalScale: {x: 6, y: 6, z: 6}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3975341759905710135}
@@ -1733,8 +1733,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -9.438, y: -1.9005284, z: -2.646}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1.3, y: 1.3, z: 1.3}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3804165176407973922}
   - {fileID: 662766739638701885}
@@ -1766,10 +1766,10 @@ Animator:
   m_GameObject: {fileID: 3632297936653311901}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: b69174d668ba02d44b14a084b217670a, type: 3}
-  m_Controller: {fileID: 9100000, guid: 1930ecbfdc7406a42be2911037e4cb8e, type: 2}
+  m_Controller: {fileID: 9100000, guid: dbab444fe2829a045ba01ce5d68dbd9f, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -1870,7 +1870,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AimTargetHighlight
   renderers:
-  - {fileID: 4313636419124200646}
+  - {fileID: 3483529466586849962}
   highlightColor: {r: 0.72955966, g: 0, b: 0, a: 1}
   highlightIntensity: 0.5
   useEmission: 1
@@ -1893,7 +1893,7 @@ MonoBehaviour:
   animator: {fileID: 5005734081289234852}
   health: {fileID: 6249402995657341953}
   playerObjectName: Player3
-  requireAliveTarget: 0
+  requireAliveTarget: 1
   targetNavMeshSampleRadius: 20
   allowPartialPathToTarget: 1
   detectionRange: 45
@@ -1934,6 +1934,7 @@ MonoBehaviour:
   collidersToDisableOnDeath:
   - {fileID: 5635329292063357719, guid: a004b2e0804137a40b54603a3d6201ec, type: 3}
   - {fileID: 4849380044339875030, guid: a004b2e0804137a40b54603a3d6201ec, type: 3}
+  statesTracker: {fileID: 0}
   debugMovementState: 1
   debugLogInterval: 1
 --- !u!65 &7452273588826883872
@@ -2741,7 +2742,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &6635762182268339244
 Transform:
   m_ObjectHideFlags: 0
@@ -5029,7 +5030,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &662766739638701885
 Transform:
   m_ObjectHideFlags: 0

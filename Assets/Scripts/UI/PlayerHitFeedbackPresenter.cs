@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
+using Random = UnityEngine.Random;
 
 public class PlayerHitFeedbackPresenter : MonoBehaviour
 {
@@ -22,6 +24,8 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
     [SerializeField] private bool keepVisibleAtLowHealth = true;
     [SerializeField, Range(0f, 1f)] private float lowHealthThreshold = 1f / 3f;
     [SerializeField, Range(0f, 1f)] private float lowHealthMaxOpacity = 0.22f;
+    [SerializeField] float heartbeatSpeed = 4.5f;// 박동 속도
+    [SerializeField, Range(0f, 1f)] private float heartbeatStrength = 0.55f; // 박동의 강도
 
     [Header("Post Processing Vignette")]
     [SerializeField] private Volume postProcessVolume;
@@ -159,7 +163,10 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
         if (!keepVisibleAtLowHealth || playerHealth == null || playerHealth.IsDead)
             return 0f;
 
-        return lowHealthMaxOpacity * GetLowHealthWeight();
+        float lowHealthWeight = GetLowHealthWeight();
+        float pulse = GetHeartbeatPulse();
+        
+        return lowHealthMaxOpacity * lowHealthWeight * pulse;
     }
 
     private void ApplyOpacity(float opacity)
@@ -170,8 +177,14 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
 
     private float GetLowHealthVignetteIntensity()
     {
-        float targetIntensity = Mathf.Lerp(_defaultVignetteIntensity, maxVignetteIntensity, GetLowHealthWeight());
-        return Mathf.Min(targetIntensity, maxVignetteIntensity);
+        if (!keepVisibleAtLowHealth || playerHealth == null || playerHealth.IsDead)
+            return _defaultVignetteIntensity;
+
+        float lowHealthWeight = GetLowHealthWeight();
+        float pulse = GetHeartbeatPulse();
+
+        float weight = lowHealthWeight * pulse;
+        return Mathf.Lerp(_defaultVignetteIntensity, maxVignetteIntensity, weight);
     }
 
     private float GetLowHealthWeight()
@@ -184,6 +197,20 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
             return 1f;
 
         return Mathf.InverseLerp(1f, lowHealthThreshold, normalizedHealth);
+    }
+
+    private float GetHeartbeatPulse()
+    {
+        if (!keepVisibleAtLowHealth || playerHealth == null || playerHealth.IsDead)
+            return 0f;
+
+        if (playerHealth.NormalizedHealth > lowHealthThreshold)
+            return 0f;
+
+        float pulse = Mathf.Sin(Time.time * heartbeatSpeed);
+        pulse = (pulse + 1f) * 0.5f;
+        
+        return Mathf.Lerp(1f - heartbeatStrength, 1f, pulse);
     }
 
     private void ApplyVignetteIntensity(float intensity)

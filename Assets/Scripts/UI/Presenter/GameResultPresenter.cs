@@ -1,4 +1,4 @@
-using System;
+using DefaultNamespace;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -11,9 +11,10 @@ namespace UI.Presenter
         [SerializeField] private UIDocument document;
         [SerializeField] private GameStateManager stateManager;
         [SerializeField] private EnemyWaveSpawner waveSpawner;
-        
+        [SerializeField] private GameStateTracker statesTracker;
+
         private float _startTime;
-        
+
         private VisualElement _container;
         private Label _titleLabel;
         private Label _subtitleLabel;
@@ -26,13 +27,7 @@ namespace UI.Presenter
 
         private void Awake()
         {
-            if(document == null)
-                document = GetComponent<UIDocument>();
-            if (stateManager == null)
-                stateManager = FindFirstObjectByType<GameStateManager>();
-            if (waveSpawner == null)
-                waveSpawner = FindFirstObjectByType<EnemyWaveSpawner>();
-
+            ResolveReferences();
             BindElements();
             Hide();
             _startTime = Time.time;
@@ -40,14 +35,18 @@ namespace UI.Presenter
 
         private void OnEnable()
         {
-            if(stateManager != null)
+            ResolveReferences();
+
+            if (stateManager != null)
                 stateManager.StateChanged += HandleStateChanged;
+
             if (_restartButton != null)
                 _restartButton.clicked += RestartGame;
-            if(_titleButton != null)
+
+            if (_titleButton != null)
                 _titleButton.clicked += GoTitle;
         }
-        
+
         private void OnDisable()
         {
             if (stateManager != null)
@@ -60,25 +59,26 @@ namespace UI.Presenter
                 _titleButton.clicked -= GoTitle;
         }
 
-        private void GoTitle()
+        private void ResolveReferences()
         {
-            Debug.Log("타이틀로 가는 버튼을 눌렀지만 나는 타이틀을 만들지 않았죠");
-        }
+            if (document == null)
+                document = GetComponent<UIDocument>();
 
-        private void RestartGame()
-        {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-        }
+            if (stateManager == null)
+                stateManager = FindFirstObjectByType<GameStateManager>();
 
+            if (waveSpawner == null)
+                waveSpawner = FindFirstObjectByType<EnemyWaveSpawner>();
 
-        private void Hide()
-        {
-            if(_container != null)
-                _container.style.display = DisplayStyle.None;
+            if (statesTracker == null)
+                statesTracker = FindFirstObjectByType<GameStateTracker>();
         }
 
         private void BindElements()
         {
+            if (document == null || document.rootVisualElement == null)
+                return;
+
             VisualElement root = document.rootVisualElement;
             _container = root.Q<VisualElement>("GameResultContainer");
             _titleLabel = root.Q<Label>("ResultTitleLabel");
@@ -90,6 +90,7 @@ namespace UI.Presenter
             _restartButton = root.Q<Button>("RestartButton");
             _titleButton = root.Q<Button>("TitleButton");
         }
+
         private void HandleStateChanged(GameState state)
         {
             if (state == GameState.GameOver)
@@ -99,46 +100,68 @@ namespace UI.Presenter
             }
 
             if (state == GameState.StageClear)
-            {
                 ShowGameClear();
-            }
         }
 
         private void ShowGameOver()
         {
-            _container.style.display = DisplayStyle.Flex;
-            _titleLabel.text = "게임 오버!";
-            _subtitleLabel.text = "생존에 실패하였습니다.";
-            _messageLabel.text = "준비하고, 장전하고, 다시 시도하세요";
+            ShowContainer();
+            SetResultText("GAME OVER", "SURVIVAL FAILED", "Prepare, reload, and try again.");
             RefreshResult();
             ShowCursor();
         }
 
         private void ShowGameClear()
         {
-            _container.style.display = DisplayStyle.Flex;
-            _titleLabel.text = "클리어";
-            _subtitleLabel.text = "미션 성공.";
-            _messageLabel.text = "당신은 모든 웨이브를 생존하였습니다.";
+            ShowContainer();
+            SetResultText("GAME CLEAR", "MISSION COMPLETE", "You survived every wave.");
             RefreshResult();
             ShowCursor();
         }
-        
+
+        private void ShowContainer()
+        {
+            if (_container != null)
+                _container.style.display = DisplayStyle.Flex;
+        }
+
+        private void Hide()
+        {
+            if (_container != null)
+                _container.style.display = DisplayStyle.None;
+        }
+
+        private void SetResultText(string title, string subtitle, string message)
+        {
+            if (_titleLabel != null)
+                _titleLabel.text = title;
+
+            if (_subtitleLabel != null)
+                _subtitleLabel.text = subtitle;
+
+            if (_messageLabel != null)
+                _messageLabel.text = message;
+        }
+
         private void RefreshResult()
         {
+            ResolveReferences();
+
             if (_waveLabel != null && waveSpawner != null)
-                _waveLabel.text = $"{waveSpawner.CurrentWave}/{waveSpawner.MaxWave}";
+                _waveLabel.text = $"{waveSpawner.CurrentWave} / {waveSpawner.MaxWave}";
+
             if (_killLabel != null)
-                _killLabel.text = "0";
+                _killLabel.text = statesTracker != null ? statesTracker.KillCount.ToString() : "0";
+
             if (_timeLabel != null)
                 _timeLabel.text = FormatTime(Time.time - _startTime);
         }
 
         private string FormatTime(float time)
         {
-            int totalSecons = Mathf.FloorToInt(Mathf.Max(0f, time));
-            int minutes = totalSecons / 60;
-            int seconds =  totalSecons % 60;
+            int totalSeconds = Mathf.FloorToInt(Mathf.Max(0f, time));
+            int minutes = totalSeconds / 60;
+            int seconds = totalSeconds % 60;
             return $"{minutes:00}:{seconds:00}";
         }
 
@@ -148,6 +171,14 @@ namespace UI.Presenter
             Cursor.visible = true;
         }
 
+        private void RestartGame()
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
 
+        private void GoTitle()
+        {
+            Debug.Log("Title scene is not connected yet.", this);
+        }
     }
 }

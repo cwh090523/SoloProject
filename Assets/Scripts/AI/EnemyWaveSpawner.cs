@@ -177,7 +177,7 @@ public class EnemyWaveSpawner : MonoBehaviour
         if (!NavMesh.SamplePosition(spawnPosition, out NavMeshHit hit, sampleRadius, areaMask))
         {
             if (logFailedNavMeshSpawn)
-                Debug.LogWarning($"Enemy spawn point is not near a NavMesh. Position: {spawnPosition}", this);
+                // Debug.LogWarning($"Enemy spawn point is not near a NavMesh. Position: {spawnPosition}", this);
 
             return;
         }
@@ -193,7 +193,7 @@ public class EnemyWaveSpawner : MonoBehaviour
         if (logSuccessfulNavMeshSpawn)
         {
             float snapDistance = Vector3.Distance(spawnPosition, hit.position);
-            Debug.Log($"Enemy spawned on NavMesh. Spawn: {spawnPosition}, NavMesh: {hit.position}, Distance: {snapDistance:0.00}", enemy);
+            // Debug.Log($"Enemy spawned on NavMesh. Spawn: {spawnPosition}, NavMesh: {hit.position}, Distance: {snapDistance:0.00}", enemy);
         }
     }
 
