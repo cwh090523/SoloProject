@@ -626,7 +626,7 @@ public class PlayerWeapon : MonoBehaviour
     private void PlayOneShot(AudioClip clip)
     {
         if (audioSource != null && clip != null)
-            audioSource.PlayOneShot(clip);
+            audioSource.PlayOneShot(clip, GameSettings.SfxVolume);
     }
 
     private void SpawnHitEffect(Vector3 point, Vector3 normal, bool isHeadshot, bool spawnBulletHole)

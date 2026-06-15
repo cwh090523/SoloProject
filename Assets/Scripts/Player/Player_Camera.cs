@@ -10,7 +10,7 @@ public class PlayerCamera : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private PlayerInput playerInput;
-    [field:SerializeField, Range(0.01f, 1f)]public float mouseSpeed;
+    [field:SerializeField, Range(0.001f, 2f)]public float mouseSpeed;
     
     [Header("Rotate")] 
     [SerializeField]private float _yRotate;
@@ -35,6 +35,8 @@ public class PlayerCamera : MonoBehaviour
 
     private void Awake()
     {
+        mouseSpeed = GameSettings.MouseSensitivity;
+
         if (playerInput == null)
         {
             PlayerInput[] inputs = Resources.FindObjectsOfTypeAll<PlayerInput>();
