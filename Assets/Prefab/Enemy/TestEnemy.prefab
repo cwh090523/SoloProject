@@ -2302,6 +2302,7 @@ MonoBehaviour:
   lockAnimatorLocalTransform: 0
   lockOwnerLocalTransform: 0
   playIdleOnEnable: 0
+  hitSpeedMultiplier: 0.35
 --- !u!114 &-5754783946903580685
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2359,6 +2360,7 @@ MonoBehaviour:
   attackCooldown: 1.25
   attackHitDelay: 0.35
   attackAnimationLockTime: 0.9
+  allowMultipleHitsPerAttack: 0
   maxAttackHeightDifference: 1.4
   requireAttackLineOfSight: 1
   attackLineOfSightMask:
@@ -2379,6 +2381,7 @@ MonoBehaviour:
   collidersToDisableOnDeath:
   - {fileID: 5635329292063357719}
   - {fileID: 4849380044339875030}
+  statesTracker: {fileID: 0}
   debugMovementState: 1
   debugLogInterval: 1
 --- !u!1 &5596204414357988398

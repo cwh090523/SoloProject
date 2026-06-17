@@ -9,6 +9,7 @@ public class GameStateManager : MonoBehaviour
     [SerializeField] private PlayerController playerController;
     [SerializeField] private PlayerCamera playerCamera;
     [SerializeField] private PlayerWeapon playerWeapon;
+    [SerializeField] private PlayerAnimation playerAnimation;
     [SerializeField] private AimTargetScanner aimTargetScanner;
     [SerializeField] private PlayerDebugHealOnKey debugHealOnKey;
     [SerializeField] private Rigidbody playerRigidbody;
@@ -19,6 +20,7 @@ public class GameStateManager : MonoBehaviour
     public GameState CurrentState { get; private set; } = GameState.Boot;
     public bool IsGameOver => CurrentState == GameState.GameOver;
     public bool IsStageClear => CurrentState == GameState.StageClear;
+    public bool IsPaused => CurrentState == GameState.Paused;
     public bool IsPlaying => CurrentState == GameState.Combat || CurrentState == GameState.Restock;
 
     public string StateText => CurrentState switch
@@ -26,10 +28,13 @@ public class GameStateManager : MonoBehaviour
         GameState.Boot => "READY",
         GameState.Combat => "IN PROGRESS",
         GameState.Restock => "RESTOCK",
+        GameState.Paused => "PAUSED",
         GameState.GameOver => "GAME OVER",
         GameState.StageClear => "STAGE CLEAR",
         _ => "READY"
     };
+
+    private GameState _stateBeforePause = GameState.Combat;
 
     private void Awake()
     {
@@ -44,7 +49,11 @@ public class GameStateManager : MonoBehaviour
             playerHealth.Died += HandlePlayerDied;
 
         if (waveSpawner != null)
+        {
             waveSpawner.StageCleared += HandleStageCleared;
+            waveSpawner.RestockStarted += HandleRestockStarted;
+            waveSpawner.RestockEnded += HandleRestockEnded;
+        }
 
         SetState(GameState.Combat);
         SetPlayerControlEnabled(true);
@@ -58,11 +67,18 @@ public class GameStateManager : MonoBehaviour
 
     private void OnDisable()
     {
+        if (IsPaused)
+            Time.timeScale = 1f;
+
         if (playerHealth != null)
             playerHealth.Died -= HandlePlayerDied;
 
         if (waveSpawner != null)
+        {
             waveSpawner.StageCleared -= HandleStageCleared;
+            waveSpawner.RestockStarted -= HandleRestockStarted;
+            waveSpawner.RestockEnded -= HandleRestockEnded;
+        }
     }
 
     public void BeginRestock()
@@ -79,6 +95,32 @@ public class GameStateManager : MonoBehaviour
             return;
 
         SetState(GameState.Combat);
+    }
+
+    public bool CanPause()
+    {
+        return IsPlaying;
+    }
+
+    public void PauseGame()
+    {
+        if (!CanPause())
+            return;
+
+        _stateBeforePause = CurrentState;
+        Time.timeScale = 0f;
+        SetState(GameState.Paused);
+        SetPlayerControlEnabled(false);
+    }
+
+    public void ResumeGame()
+    {
+        if (!IsPaused)
+            return;
+
+        Time.timeScale = 1f;
+        SetState(_stateBeforePause == GameState.Paused ? GameState.Combat : _stateBeforePause);
+        SetPlayerControlEnabled(true);
     }
 
     private void ResolveReferences()
@@ -100,6 +142,9 @@ public class GameStateManager : MonoBehaviour
 
             if (playerWeapon == null)
                 playerWeapon = player.GetComponent<PlayerWeapon>();
+
+            if (playerAnimation == null)
+                playerAnimation = player.GetComponentInChildren<PlayerAnimation>();
 
             if (aimTargetScanner == null)
                 aimTargetScanner = player.GetComponent<AimTargetScanner>();
@@ -123,6 +168,9 @@ public class GameStateManager : MonoBehaviour
         if (playerWeapon == null)
             playerWeapon = FindFirstObjectByType<PlayerWeapon>();
 
+        if (playerAnimation == null)
+            playerAnimation = FindFirstObjectByType<PlayerAnimation>();
+
         if (aimTargetScanner == null)
             aimTargetScanner = FindFirstObjectByType<AimTargetScanner>();
 
@@ -139,10 +187,12 @@ public class GameStateManager : MonoBehaviour
             return;
 
         SetState(GameState.GameOver);
+        Time.timeScale = 1f;
 
         if (waveSpawner != null)
             waveSpawner.StopWaves();
 
+        StopPlayerAnimationAtIdle();
         SetPlayerControlEnabled(false);
     }
 
@@ -152,7 +202,25 @@ public class GameStateManager : MonoBehaviour
             return;
 
         SetState(GameState.StageClear);
+        Time.timeScale = 1f;
+        StopPlayerAnimationAtIdle();
         SetPlayerControlEnabled(false);
+    }
+
+    private void HandleRestockStarted(float duration)
+    {
+        BeginRestock();
+    }
+
+    private void HandleRestockEnded()
+    {
+        BeginCombat();
+    }
+
+    private void StopPlayerAnimationAtIdle()
+    {
+        if (playerAnimation != null)
+            playerAnimation.PlayIdleAndStopUpdating();
     }
 
     private void SetState(GameState nextState)

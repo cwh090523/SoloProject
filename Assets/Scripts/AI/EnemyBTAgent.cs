@@ -71,6 +71,7 @@ public class EnemyBTAgent : MonoBehaviour
     [SerializeField] private float attackCooldown = 1.25f;
     [SerializeField] private float attackHitDelay = 0.35f;
     [SerializeField] private float attackAnimationLockTime = 0.9f;
+    [SerializeField] private bool allowMultipleHitsPerAttack;
     [SerializeField] private float maxAttackHeightDifference = 1.4f;
     [SerializeField] private bool requireAttackLineOfSight = true;
     [SerializeField] private LayerMask attackLineOfSightMask = ~0;
@@ -108,6 +109,7 @@ public class EnemyBTAgent : MonoBehaviour
     private float _nextDebugLogTime;
     private bool _hasDestination;
     private bool _isAttacking;
+    private bool _attackDamageApplied;
     private bool _isJumping;
     private bool _deathAnimationPlayed;
     private bool _wasMovementBlocked;
@@ -418,14 +420,14 @@ public class EnemyBTAgent : MonoBehaviour
     private IEnumerator AttackRoutine()
     {
         _isAttacking = true;
+        _attackDamageApplied = false;
 
         string stateName = GetAttackStateName();
         PlayAttack(stateName);
 
         yield return new WaitForSeconds(Mathf.Max(0f, attackHitDelay));
 
-        if (!IsDead() && HasTarget() && CanAttackTarget())
-            ExecuteAttack();
+        TryApplyAttackDamage();
 
         float remainingLockTime = Mathf.Max(0f, attackAnimationLockTime - attackHitDelay);
         if (remainingLockTime > 0f)
@@ -434,6 +436,26 @@ public class EnemyBTAgent : MonoBehaviour
         _isAttacking = false;
         PlayIdle();
         _attackRoutine = null;
+    }
+
+    public void Attack()
+    {
+        TryApplyAttackDamage();
+    }
+
+    public void AttackHit()
+    {
+        TryApplyAttackDamage();
+    }
+
+    public void Hit()
+    {
+        TryApplyAttackDamage();
+    }
+
+    public void DealDamage()
+    {
+        TryApplyAttackDamage();
     }
 
     private BTStatus DoDeath()
@@ -568,6 +590,18 @@ public class EnemyBTAgent : MonoBehaviour
         }
 
         _targetHealth.TakeDamage(attackDamage);
+    }
+
+    private void TryApplyAttackDamage()
+    {
+        if (!allowMultipleHitsPerAttack && _attackDamageApplied)
+            return;
+
+        if (!_isAttacking || IsDead() || !HasTarget() || !CanAttackTarget())
+            return;
+
+        _attackDamageApplied = true;
+        ExecuteAttack();
     }
 
     private bool IsMovementBlocked()
@@ -751,6 +785,7 @@ public class EnemyBTAgent : MonoBehaviour
 
         _isJumping = false;
         _isAttacking = false;
+        _attackDamageApplied = false;
         StopAgent();
         DisableDeathColliders();
         _deathAnimationPlayed = false;
@@ -762,6 +797,7 @@ public class EnemyBTAgent : MonoBehaviour
         _deathAnimationPlayed = false;
         _isJumping = false;
         _isAttacking = false;
+        _attackDamageApplied = false;
         _currentAnimationState = string.Empty;
         EnableDeathColliders();
     }

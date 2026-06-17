@@ -1,0 +1,60 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="PauseRoot" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: none; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.48); -unity-font: url(&quot;project://database/Assets/Front/x12y12pxMaruMinyaHangul.ttf?fileID=12800000&amp;guid=19cee556673267946ab7b6b20e34afe3&amp;type=3#x12y12pxMaruMinyaHangul&quot;);">
+        <ui:VisualElement name="PauseSettingsPanel" style="width: 620px; padding-left: 24px; padding-right: 24px; padding-top: 20px; padding-bottom: 22px; background-color: rgba(8, 10, 14, 0.96); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgba(255, 255, 255, 0.22); border-right-color: rgba(0, 0, 0, 0.7); border-top-color: rgba(255, 255, 255, 0.22); border-bottom-color: rgba(0, 0, 0, 0.85);">
+            <ui:VisualElement style="height: 48px; flex-direction: row; align-items: center; justify-content: space-between;">
+                <ui:Label text="PAUSED" style="color: rgb(255, 255, 255); font-size: 34px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:Label text="SURVIVAL CONFIG" style="color: rgb(255, 214, 90); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="height: 2px; margin-bottom: 14px; background-color: rgba(255, 255, 255, 0.22);"/>
+            <ui:VisualElement style="margin-bottom: 14px; padding-left: 14px; padding-right: 14px; padding-top: 10px; padding-bottom: 12px; background-color: rgba(20, 29, 38, 0.72); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(0, 0, 0, 0.45); border-top-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(0, 0, 0, 0.55);">
+                <ui:Label text="INPUT" style="height: 21px; color: rgb(255, 214, 90); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:VisualElement style="height: 58px;">
+                    <ui:VisualElement style="height: 22px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="MOUSE SENSITIVITY" style="color: rgba(255, 255, 255, 0.8); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:VisualElement name="MouseSensitivityValueContainer" style="width: 92px; height: 24px; background-color: rgba(0, 0, 0, 0.28); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 214, 90, 0.38); border-right-color: rgba(255, 214, 90, 0.38); border-top-color: rgba(255, 214, 90, 0.38); border-bottom-color: rgba(255, 214, 90, 0.38);">
+                            <ui:Label text="0.300" name="MouseSensitivityValueLabel" style="position: absolute; left: 0; right: 8px; top: 0; bottom: 0; color: rgb(255, 214, 90); font-size: 16px; -unity-font-style: bold; letter-spacing: 0; -unity-text-align: middle-right;"/>
+                            <ui:TextField value="0.300" name="MouseSensitivityInput" style="position: absolute; left: 0; right: 0; top: -2px; bottom: 0; display: none; margin-top: 0; margin-right: 0; padding-left: 0; padding-right: 0; color: rgb(255, 214, 90); font-size: 16px; -unity-font-style: bold; letter-spacing: 0; -unity-text-align: middle-right; background-color: rgba(0, 0, 0, 0.38); border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0;"/>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Slider name="MouseSensitivitySlider" low-value="0.001" high-value="10" value="0.3" style="margin-top: 8px; height: 28px;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement style="margin-bottom: 14px; padding-left: 14px; padding-right: 14px; padding-top: 10px; padding-bottom: 12px; background-color: rgba(16, 30, 43, 0.72); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(0, 0, 0, 0.45); border-top-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(0, 0, 0, 0.55);">
+                <ui:Label text="AUDIO" style="height: 21px; color: rgb(255, 214, 90); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:VisualElement style="height: 52px;">
+                    <ui:VisualElement style="height: 20px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="MASTER VOLUME" style="color: rgba(255, 255, 255, 0.8); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:Label text="100%" name="MasterVolumeValueLabel" style="color: rgb(255, 214, 90); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    </ui:VisualElement>
+                    <ui:Slider name="MasterVolumeSlider" low-value="0" high-value="1" value="1" style="margin-top: 5px; height: 25px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement style="height: 52px;">
+                    <ui:VisualElement style="height: 20px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="BGM VOLUME" style="color: rgba(255, 255, 255, 0.8); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:Label text="100%" name="BgmVolumeValueLabel" style="color: rgb(255, 214, 90); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    </ui:VisualElement>
+                    <ui:Slider name="BgmVolumeSlider" low-value="0" high-value="1" value="1" style="margin-top: 5px; height: 25px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement style="height: 52px;">
+                    <ui:VisualElement style="height: 20px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="SFX VOLUME" style="color: rgba(255, 255, 255, 0.8); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:Label text="100%" name="SfxVolumeValueLabel" style="color: rgb(255, 214, 90); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    </ui:VisualElement>
+                    <ui:Slider name="SfxVolumeSlider" low-value="0" high-value="1" value="1" style="margin-top: 5px; height: 25px;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement style="margin-bottom: 16px; padding-left: 14px; padding-right: 14px; padding-top: 10px; padding-bottom: 12px; background-color: rgba(19, 29, 42, 0.7); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(0, 0, 0, 0.45); border-top-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(0, 0, 0, 0.55);">
+                <ui:Label text="DISPLAY" style="height: 21px; color: rgb(255, 214, 90); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                <ui:VisualElement style="height: 64px;">
+                    <ui:Label text="RESOLUTION" style="height: 18px; color: rgba(255, 255, 255, 0.8); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    <ui:DropdownField name="ResolutionDropdown" style="margin-top: 7px; height: 34px; color: rgb(255, 255, 255); font-size: 15px; -unity-font-style: bold; background-color: rgba(26, 54, 84, 0.95);"/>
+                </ui:VisualElement>
+                <ui:VisualElement style="height: 32px; flex-direction: row; align-items: center; justify-content: space-between;">
+                    <ui:Label text="FULLSCREEN" style="color: rgba(255, 255, 255, 0.8); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    <ui:Toggle name="FullscreenToggle" value="true" style="width: 80px;"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Button text="RESUME" name="ResumeButton" style="height: 48px; color: rgb(255, 255, 255); font-size: 21px; -unity-font-style: bold; background-color: rgb(148, 20, 28); border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

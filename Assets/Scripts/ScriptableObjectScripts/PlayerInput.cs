@@ -9,6 +9,7 @@ namespace ScriptableObjectScripts
     {
         public event Action<Vector2> OnMovementChange;
         public event Action OnAttackKeyPressed;
+        public event Action OnInteractKeyPressed;
         public event Action<bool> OnAimKeyPressed;
         public event Action<bool> OnCrouchKeyPressed;
         public event Action<float> OnLeanChanged;
@@ -73,6 +74,8 @@ namespace ScriptableObjectScripts
 
         public void OnInteract(InputAction.CallbackContext context)
         {
+            if (context.performed)
+                OnInteractKeyPressed?.Invoke();
         }
 
         public void OnCrouch(InputAction.CallbackContext context)

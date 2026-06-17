@@ -80,6 +80,26 @@ public class PlayerAnimation : MonoBehaviour
             CrossFadeTo(aimStateName);
     }
 
+    public void PlayIdleAndStopUpdating()
+    {
+        if (animator == null)
+            return;
+
+        _isAiming = false;
+        _actionLockedUntil = 0f;
+        _currentStateHash = 0;
+
+        animator.SetFloat(MoveXHash, 0f);
+        animator.SetFloat(MoveYHash, 0f);
+        animator.SetFloat(SpeedHash, 0f);
+        animator.SetBool(IsMovingHash, false);
+        animator.SetBool(IsSprintingHash, false);
+        animator.SetFloat(VerticalVelocityHash, 0f);
+
+        CrossFadeTo(idleStateName);
+        enabled = false;
+    }
+
     private void UpdateState()
     {
         if (_isAiming && keepAimStateWhileAiming && HasState(aimStateName))

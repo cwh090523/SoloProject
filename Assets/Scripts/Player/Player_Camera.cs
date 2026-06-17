@@ -10,7 +10,7 @@ public class PlayerCamera : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private PlayerInput playerInput;
-    [field:SerializeField, Range(0.001f, 2f)]public float mouseSpeed;
+    [field:SerializeField, Range(0.001f, 10f)]public float mouseSpeed;
     
     [Header("Rotate")] 
     [SerializeField]private float _yRotate;

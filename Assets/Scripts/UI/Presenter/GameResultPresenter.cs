@@ -173,12 +173,12 @@ namespace UI.Presenter
 
         private void RestartGame()
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            SceneFadeTransition.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         private void GoTitle()
         {
-            Debug.Log("Title scene is not connected yet.", this);
+            SceneFadeTransition.LoadScene("TEST_TITLE");
         }
     }
 }

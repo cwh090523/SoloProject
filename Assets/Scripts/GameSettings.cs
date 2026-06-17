@@ -3,7 +3,7 @@ using UnityEngine;
 public static class GameSettings
 {
     public const float MinMouseSensitivity = 0.001f;
-    public const float MaxMouseSensitivity = 2f;
+    public const float MaxMouseSensitivity = 10f;
 
     private const string MouseSensitivityKey = "Settings.MouseSensitivity";
     private const string MasterVolumeKey = "Settings.MasterVolume";

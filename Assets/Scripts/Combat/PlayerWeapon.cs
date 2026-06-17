@@ -98,6 +98,7 @@ public class PlayerWeapon : MonoBehaviour
     public float CurrentSpread => _currentSpread;
     public float MaxSpread => maxSpread;
     public float SpreadRatio => maxSpread <= 0f ? 0f : Mathf.Clamp01(GetEffectiveSpread() / maxSpread);
+    public float Damage => damage;
 
     private void Awake()
     {
@@ -262,6 +263,23 @@ public class PlayerWeapon : MonoBehaviour
         AmmoChanged?.Invoke();
     }
 
+    public void AddReserveAmmo(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        reserveAmmo += amount;
+        AmmoChanged?.Invoke();
+    }
+
+    public void IncreaseDamage(float amount)
+    {
+        if (amount <= 0f)
+            return;
+
+        damage += amount;
+    }
+
     private float GetFinalDamage(RaycastHit hit, out bool isHeadshot)
     {
         isHeadshot = false;
@@ -282,6 +300,13 @@ public class PlayerWeapon : MonoBehaviour
 
     private void PlayDamageHitReaction(RaycastHit hit, bool isHeadshot)
     {
+        RangedEnemyBTAgent rangedEnemy = hit.collider.GetComponentInParent<RangedEnemyBTAgent>();
+        if (rangedEnemy != null)
+        {
+            rangedEnemy.PlayHitReaction(isHeadshot);
+            return;
+        }
+
         DamageHitReaction hitReaction = hit.collider.GetComponentInParent<DamageHitReaction>();
         if (hitReaction != null)
         {

@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="ShopRoot" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: none; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.48); -unity-font: url(&quot;project://database/Assets/Front/x12y12pxMaruMinyaHangul.ttf?fileID=12800000&amp;guid=19cee556673267946ab7b6b20e34afe3&amp;type=3#x12y12pxMaruMinyaHangul&quot;);">
+        <ui:VisualElement style="width: 1040px; max-width: 92%; padding-left: 28px; padding-right: 28px; padding-top: 24px; padding-bottom: 26px; background-color: rgba(8, 10, 14, 0.96); border-top-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; border-bottom-left-radius: 8px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgba(255, 255, 255, 0.22); border-right-color: rgba(0, 0, 0, 0.74); border-top-color: rgba(255, 255, 255, 0.22); border-bottom-color: rgba(0, 0, 0, 0.86);">
+            <ui:VisualElement style="height: 58px; flex-direction: row; align-items: center; justify-content: space-between;">
+                <ui:VisualElement>
+                    <ui:Label text="SUPPLY SHOP" style="color: rgb(255, 255, 255); font-size: 36px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    <ui:Label text="Random supplies before the next wave" style="margin-top: -2px; color: rgba(255, 255, 255, 0.62); font-size: 14px; -unity-font-style: bold; letter-spacing: 0;"/>
+                </ui:VisualElement>
+                <ui:Label text="$ 0" name="MoneyLabel" style="padding-left: 18px; padding-right: 18px; padding-top: 8px; padding-bottom: 8px; color: rgb(255, 214, 90); font-size: 25px; -unity-font-style: bold; background-color: rgb(26, 38, 55); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; letter-spacing: 0;"/>
+            </ui:VisualElement>
+            <ui:VisualElement style="height: 2px; margin-top: 12px; margin-bottom: 18px; background-color: rgba(255, 255, 255, 0.18);"/>
+            <ui:Label name="MessageLabel" text="Look at the shopkeeper and press Interact." style="height: 28px; color: rgba(255, 255, 255, 0.78); font-size: 17px; -unity-font-style: bold; letter-spacing: 0;"/>
+            <ui:VisualElement name="ShopSlotsContainer" style="margin-top: 14px; flex-direction: row; justify-content: space-between;"/>
+            <ui:Button text="CLOSE" name="CloseShopButton" style="height: 48px; margin-top: 20px; color: rgb(255, 255, 255); font-size: 21px; -unity-font-style: bold; background-color: rgb(25, 28, 33); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(255, 255, 255, 0.06); border-top-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(0, 0, 0, 0.7); border-top-left-radius: 4px; border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px;"/>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

@@ -73,6 +73,32 @@ public class PlayerStamina : MonoBehaviour
         SetStamina(maxStamina);
     }
 
+    public void IncreaseMaxStamina(float amount, bool restoreByIncreaseAmount)
+    {
+        if (amount <= 0f)
+            return;
+
+        maxStamina = Mathf.Max(1f, maxStamina + amount);
+
+        if (restoreByIncreaseAmount)
+            currentStamina = Mathf.Min(maxStamina, currentStamina + amount);
+        else
+            currentStamina = Mathf.Clamp(currentStamina, 0f, maxStamina);
+
+        if (_isExhausted && NormalizedStamina >= exhaustedResumeRatio)
+            _isExhausted = false;
+
+        StaminaChanged?.Invoke(currentStamina, maxStamina);
+    }
+
+    public void IncreaseRecoveryPerSecond(float amount)
+    {
+        if (amount <= 0f)
+            return;
+
+        recoveryPerSecond += amount;
+    }
+
     private void SetStamina(float value)
     {
         float nextStamina = Mathf.Clamp(value, 0f, maxStamina);

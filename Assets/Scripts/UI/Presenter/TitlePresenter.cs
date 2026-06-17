@@ -223,7 +223,7 @@ namespace UI.Presenter
         {
             GameSettings.ApplyAudio();
             GameSettings.ApplyDisplay();
-            SceneManager.LoadScene(gameSceneName);
+            SceneFadeTransition.LoadScene(gameSceneName);
         }
 
         private void ShowSettings()
