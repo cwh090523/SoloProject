@@ -13,6 +13,7 @@ public class ShopInteractable : MonoBehaviour
     [SerializeField] private Transform ownerRoot;
     [SerializeField] private float interactDistance = 4f;
     [SerializeField] private LayerMask interactLayers = ~0;
+    [SerializeField] private bool alwaysOpen;
     [SerializeField] private bool logDebugState;
 
     private void Awake()
@@ -50,13 +51,13 @@ public class ShopInteractable : MonoBehaviour
             return;
         }
 
-        if (stateManager == null)
+        if (!alwaysOpen && stateManager == null)
         {
             LogBlocked("GameStateManager is missing");
             return;
         }
 
-        if (stateManager.CurrentState != GameState.Restock)
+        if (!alwaysOpen && stateManager.CurrentState != GameState.Restock)
         {
             LogBlocked($"current state is {stateManager.CurrentState}");
             return;
@@ -68,7 +69,7 @@ public class ShopInteractable : MonoBehaviour
             return;
         }
 
-        shopPresenter.Open();
+        shopPresenter.Open(alwaysOpen);
     }
 
     private void ResolveReferences()

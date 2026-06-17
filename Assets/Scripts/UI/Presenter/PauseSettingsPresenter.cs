@@ -20,6 +20,7 @@ namespace UI.Presenter
 
         private VisualElement _root;
         private Button _resumeButton;
+        private Button _titleButton;
         private Slider _mouseSensitivitySlider;
         private Slider _masterVolumeSlider;
         private Slider _bgmVolumeSlider;
@@ -102,6 +103,9 @@ namespace UI.Presenter
             if (_resumeButton != null)
                 _resumeButton.clicked += ClosePause;
 
+            if (_titleButton != null)
+                _titleButton.clicked += GoTitle;
+
             RegisterSettingsCallbacks();
         }
 
@@ -109,6 +113,9 @@ namespace UI.Presenter
         {
             if (_resumeButton != null)
                 _resumeButton.clicked -= ClosePause;
+
+            if (_titleButton != null)
+                _titleButton.clicked -= GoTitle;
 
             UnregisterSettingsCallbacks();
 
@@ -135,6 +142,7 @@ namespace UI.Presenter
             VisualElement root = document.rootVisualElement;
             _root = root.Q<VisualElement>("PauseRoot");
             _resumeButton = root.Q<Button>("ResumeButton");
+            _titleButton = root.Q<Button>("TitleButton");
             _mouseSensitivitySlider = root.Q<Slider>("MouseSensitivitySlider");
             _masterVolumeSlider = root.Q<Slider>("MasterVolumeSlider");
             _bgmVolumeSlider = root.Q<Slider>("BgmVolumeSlider");
@@ -215,6 +223,19 @@ namespace UI.Presenter
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
+        }
+
+        private void GoTitle()
+        {
+            HideWithoutResuming();
+
+            if (stateManager != null && stateManager.IsPaused)
+                stateManager.ResumeGame();
+
+            Time.timeScale = 1f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            SceneFadeTransition.LoadScene("TEST_TITLE");
         }
 
         private void HideWithoutResuming()

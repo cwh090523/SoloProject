@@ -5,6 +5,7 @@ public class ShopAreaGate : MonoBehaviour
     [SerializeField] private GameStateManager stateManager;
     [SerializeField] private GameObject[] blockers;
     [SerializeField] private bool openDuringRestockOnly = true;
+    [SerializeField] private bool alwaysOpen;
     [SerializeField] private bool closeShopWhenRestockEnds = true;
     [SerializeField] private bool ejectPlayerWhenRestockEnds = true;
     [SerializeField] private Collider shopArea;
@@ -49,7 +50,7 @@ public class ShopAreaGate : MonoBehaviour
 
     private void RefreshGate()
     {
-        bool shouldOpen = stateManager != null && (!openDuringRestockOnly || stateManager.CurrentState == GameState.Restock);
+        bool shouldOpen = alwaysOpen || stateManager != null && (!openDuringRestockOnly || stateManager.CurrentState == GameState.Restock);
         bool shouldBlock = !shouldOpen;
 
         if (blockers == null || blockers.Length == 0)

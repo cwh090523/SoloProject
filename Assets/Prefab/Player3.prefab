@@ -109,7 +109,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5571258381359390798
 Transform:
   m_ObjectHideFlags: 0
@@ -199,7 +199,7 @@ CapsuleCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.5
   m_Height: 2
@@ -391,7 +391,7 @@ Transform:
   m_GameObject: {fileID: 4181071666883308045}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalPosition: {x: 0, y: 30, z: 0}
   m_LocalScale: {x: 30, y: 30, z: 30}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -478,6 +478,7 @@ GameObject:
   - component: {fileID: 7016011568074218122}
   - component: {fileID: 6271588316566212244}
   - component: {fileID: 1297863459684216041}
+  - component: {fileID: 2316562680107687485}
   m_Layer: 7
   m_Name: Player3
   m_TagString: Untagged
@@ -485,19 +486,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1297863459684216041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4726568408697836445}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fdc817e0e4154d64bb6c1e9596c0144d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerDebugHealOnKey
-  healAmount: 10
 --- !u!4 &4408039750368836863
 Transform:
   m_ObjectHideFlags: 0
@@ -683,7 +671,7 @@ MonoBehaviour:
   acceleration: 20
   airControl: 0.45
   stamina: {fileID: 2825600743498649224}
-  jumpForce: 5
+  jumpForce: 6
   groundCheckRadius: 0.24
   groundCheckDistance: 0.08
   groundLayers:
@@ -727,7 +715,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCamera
   playerInput: {fileID: 11400000, guid: 7525915f1d77fb04ba0fc17267551551, type: 2}
-  mouseSpeed: 0.2
+  mouseSpeed: 10
   _yRotate: 0
   _xRotate: 0
   cameraYawOffset: 0
@@ -756,10 +744,10 @@ MonoBehaviour:
   playerAnimation: {fileID: 4269125211606204174}
   muzzlePoint: {fileID: 9076423254571135979}
   audioSource: {fileID: 6492587213939262156}
-  damage: 25
+  damage: 10
   range: 100
   fireRate: 9
-  autoFireHoldDelay: 0.1
+  autoFireHoldDelay: 0.15
   hitLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -788,7 +776,6 @@ MonoBehaviour:
   bulletHoleActiveTime: 12
   hitParticleLifetime: 2
   fireClip: {fileID: 8300000, guid: 5e13ba99de1a94046b41d5fdbc74e92e, type: 3}
-  reloadClip: {fileID: 0}
   dropMagazineClip: {fileID: 8300000, guid: 17fde9cb7c6119d4588f643b86b9d4f0, type: 3}
   inputMagazineClip: {fileID: 8300000, guid: 4827b95aca172d4499214c223165054a, type: 3}
   lockMagazineClip: {fileID: 8300000, guid: 94e4152c980c05347bfbf96ff57d39d0, type: 3}
@@ -850,7 +837,7 @@ MonoBehaviour:
   - {fileID: 7072338938892548241}
   localPosition: {x: 0, y: 0, z: 0}
   localEulerAngles: {x: 0, y: 0, z: 0}
-  hideBodyForLocalView: 0
+  hideBodyForLocalView: 1
   useAnimationForAimPose: 1
   aimLocalPosition: {x: 0, y: 0, z: 0}
   aimLocalEulerAngles: {x: 0, y: 0, z: 0}
@@ -880,7 +867,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c93c07668d184ac0a060674d294c0e58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 150
+  maxHealth: 1600
   currentHealth: 0
   startWithFullHealth: 1
   invulnerable: 0
@@ -907,6 +894,32 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   drawDebugRay: 1
+--- !u!114 &1297863459684216041
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4726568408697836445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdc817e0e4154d64bb6c1e9596c0144d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDebugHealOnKey
+  healAmount: 10
+--- !u!114 &2316562680107687485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4726568408697836445}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be36e3a2e5c20cb4eb37a708c689aa30, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWallet
+  startingMoney: 22223
 --- !u!1 &7510552316243621103
 GameObject:
   m_ObjectHideFlags: 0
@@ -974,7 +987,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.01
-  far clip plane: 1000
+  far clip plane: 2000
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -1016,7 +1029,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0

@@ -43,6 +43,8 @@ namespace Shop
         private bool _wasPlayerWeaponEnabled;
         private bool _wasAimTargetScannerEnabled;
         private bool _wasDebugHealOnKeyEnabled;
+        private bool _wasCursorVisible;
+        private CursorLockMode _previousCursorLockState;
 
         public bool IsOpen => _root != null && _root.style.display == DisplayStyle.Flex;
 
@@ -138,7 +140,12 @@ namespace Shop
 
         public void Open()
         {
-            if (stateManager != null && stateManager.CurrentState != GameState.Restock)
+            Open(false);
+        }
+
+        public void Open(bool ignoreStateRequirement)
+        {
+            if (!ignoreStateRequirement && stateManager != null && stateManager.CurrentState != GameState.Restock)
                 return;
 
             ResolveReferences();
@@ -564,6 +571,8 @@ namespace Shop
             if (_inputBlockedByShop)
                 return;
 
+            _previousCursorLockState = Cursor.lockState;
+            _wasCursorVisible = Cursor.visible;
             _wasPlayerControllerEnabled = playerController != null && playerController.enabled;
             _wasPlayerCameraEnabled = playerCamera != null && playerCamera.enabled;
             _wasPlayerWeaponEnabled = playerWeapon != null && playerWeapon.enabled;
@@ -615,6 +624,9 @@ namespace Shop
                 debugHealOnKey.enabled = _wasDebugHealOnKeyEnabled;
 
             _inputBlockedByShop = false;
+
+            Cursor.lockState = _previousCursorLockState;
+            Cursor.visible = _wasCursorVisible;
         }
 
         private sealed class ShopSlotView
