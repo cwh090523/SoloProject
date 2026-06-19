@@ -99,6 +99,7 @@ public class EnemyBTAgent : MonoBehaviour
     private IEnemyAttackHandler[] _attackHandlers;
     private IEnemyAnimationDriver[] _animationDrivers;
     private IEnemySpeedModifier[] _speedModifiers;
+    private DamageHitReaction[] _hitReactions;
     private Coroutine _attackRoutine;
     private Coroutine _jumpRoutine;
     private NavMeshPath _pathProbe;
@@ -123,6 +124,8 @@ public class EnemyBTAgent : MonoBehaviour
 
     private void OnEnable()
     {
+        SubscribeHitReactionEvents();
+
         if (health != null)
         {
             health.Died += HandleDied;
@@ -134,6 +137,8 @@ public class EnemyBTAgent : MonoBehaviour
 
     private void OnDisable()
     {
+        UnsubscribeHitReactionEvents();
+
         if (health != null)
         {
             health.Died -= HandleDied;
@@ -196,6 +201,7 @@ public class EnemyBTAgent : MonoBehaviour
         _attackHandlers = CollectInterfaces<IEnemyAttackHandler>(behaviours);
         _animationDrivers = CollectInterfaces<IEnemyAnimationDriver>(behaviours);
         _speedModifiers = CollectInterfaces<IEnemySpeedModifier>(behaviours);
+        _hitReactions = GetComponents<DamageHitReaction>();
     }
 
     private void CacheDeathColliders()
@@ -705,6 +711,9 @@ public class EnemyBTAgent : MonoBehaviour
 
     private void PlayIdle()
     {
+        if (IsHitReacting())
+            return;
+
         if (TryPlayExtensionAnimation(driver => driver.PlayIdle()))
             return;
 
@@ -713,6 +722,9 @@ public class EnemyBTAgent : MonoBehaviour
 
     private void PlayMove()
     {
+        if (IsHitReacting())
+            return;
+
         if (TryPlayExtensionAnimation(driver => driver.PlayMove()))
             return;
 
@@ -761,6 +773,55 @@ public class EnemyBTAgent : MonoBehaviour
 
         _currentAnimationState = stateName;
         animator.CrossFadeInFixedTime(stateName, animationCrossFade, 0, 0f);
+    }
+
+    private bool IsHitReacting()
+    {
+        if (_hitReactions == null)
+            return false;
+
+        for (int i = 0; i < _hitReactions.Length; i++)
+        {
+            if (_hitReactions[i] != null && _hitReactions[i].IsReacting)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void SubscribeHitReactionEvents()
+    {
+        if (_hitReactions == null || _hitReactions.Length == 0)
+            _hitReactions = GetComponents<DamageHitReaction>();
+
+        if (_hitReactions == null)
+            return;
+
+        for (int i = 0; i < _hitReactions.Length; i++)
+        {
+            if (_hitReactions[i] == null)
+                continue;
+
+            _hitReactions[i].ReactionFinished -= HandleHitReactionFinished;
+            _hitReactions[i].ReactionFinished += HandleHitReactionFinished;
+        }
+    }
+
+    private void UnsubscribeHitReactionEvents()
+    {
+        if (_hitReactions == null)
+            return;
+
+        for (int i = 0; i < _hitReactions.Length; i++)
+        {
+            if (_hitReactions[i] != null)
+                _hitReactions[i].ReactionFinished -= HandleHitReactionFinished;
+        }
+    }
+
+    private void HandleHitReactionFinished()
+    {
+        _currentAnimationState = string.Empty;
     }
 
     private void HandleDied()

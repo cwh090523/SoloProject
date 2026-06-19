@@ -6823,7 +6823,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c93c07668d184ac0a060674d294c0e58, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 250
+  maxHealth: 300
   currentHealth: 0
   startWithFullHealth: 1
   invulnerable: 0
@@ -6885,7 +6885,7 @@ MonoBehaviour:
   moveDestinationStopDistance: 0.25
   ignoreDetectionRange: 1
   damage: 8
-  attackCooldown: 0.2
+  attackCooldown: 0.1
   readyAttackDuration: 1
   releaseDelay: 0.45
   projectileSpeed: 24

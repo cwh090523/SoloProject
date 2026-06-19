@@ -329,6 +329,7 @@ public class PlayerWeapon : MonoBehaviour
     {
         _isReloading = true;
         _reloadCompletedByEvent = false;
+        SetAiming(false);
         ReloadStarted?.Invoke();
         PlayAction(reloadStateName, reloadTime);
 
@@ -402,12 +403,24 @@ public class PlayerWeapon : MonoBehaviour
 
     private void HandleAim(bool isPressed)
     {
-        _isAiming = isPressed;
-        if (playerAnimation != null)
-            playerAnimation.SetAiming(_isAiming);
+        if (isPressed && _isReloading)
+        {
+            SetAiming(false);
+            return;
+        }
+
+        SetAiming(isPressed);
 
         if (_isAiming)
             _currentSpread = Mathf.Min(_currentSpread, maxSpread * aimSpreadMultiplier);
+    }
+
+    private void SetAiming(bool isAiming)
+    {
+        _isAiming = isAiming && !_isReloading;
+
+        if (playerAnimation != null)
+            playerAnimation.SetAiming(_isAiming);
     }
 
     private float GetEffectiveSpread()

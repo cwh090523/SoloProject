@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -10,6 +12,7 @@ namespace Shop
     {
         private const string ShopUiResourcePath = "UI/ShopUI";
         private const string DefaultItemListResourcePath = "Shop/DefaultShopItemList";
+        private const string DefaultPurchaseSoundResourcePath = "Audio/BuySound";
 
         [SerializeField] private UIDocument document;
         [SerializeField] private GameStateManager stateManager;
@@ -27,6 +30,13 @@ namespace Shop
         [SerializeField] private ShopItemListSO itemList;
         [SerializeField, Min(1)] private int visibleSlotCount = 4;
         [SerializeField] private bool avoidDuplicateVisibleItems = true;
+        [SerializeField] private float slotEnterDelay = 0.06f;
+        [SerializeField] private float slotAnimationDuration = 0.22f;
+
+        [Header("Audio")]
+        [SerializeField] private AudioSource purchaseAudioSource;
+        [SerializeField] private AudioClip purchaseSound;
+        [SerializeField, Range(0f, 1f)] private float purchaseSoundVolume = 0.85f;
 
         private readonly List<ShopItemDefinition> _stock = new List<ShopItemDefinition>();
         private readonly List<ShopSlotView> _slotViews = new List<ShopSlotView>();
@@ -45,6 +55,7 @@ namespace Shop
         private bool _wasDebugHealOnKeyEnabled;
         private bool _wasCursorVisible;
         private CursorLockMode _previousCursorLockState;
+        private bool _isBuying;
 
         public bool IsOpen => _root != null && _root.style.display == DisplayStyle.Flex;
 
@@ -110,6 +121,7 @@ namespace Shop
                 document = GetComponent<UIDocument>();
 
             ResolveReferences();
+            ResolvePurchaseAudio();
             ResolveItemList();
             BindElements();
             BuildSlotViews();
@@ -149,11 +161,16 @@ namespace Shop
                 return;
 
             ResolveReferences();
+            ResolvePurchaseAudio();
             EnsureStock();
             Refresh();
 
             if (_root != null)
+            {
                 _root.style.display = DisplayStyle.Flex;
+                PanelOpenEffect.Play(_root);
+                PlayAllSlotEnterAnimations();
+            }
 
             BlockPlayerInputForShop();
 
@@ -264,30 +281,30 @@ namespace Shop
             button.style.paddingRight = 18f;
             button.style.paddingTop = 18f;
             button.style.paddingBottom = 16f;
-            button.style.backgroundColor = new Color(0.08f, 0.1f, 0.12f, 0.96f);
+            button.style.backgroundColor = new Color(0.17f, 0.13f, 0.09f, 0.96f);
             button.style.borderLeftWidth = 2f;
             button.style.borderRightWidth = 2f;
             button.style.borderTopWidth = 2f;
             button.style.borderBottomWidth = 2f;
-            button.style.borderLeftColor = new Color(0.82f, 0.63f, 0.28f, 0.9f);
-            button.style.borderRightColor = new Color(0f, 0f, 0f, 0.75f);
-            button.style.borderTopColor = new Color(0.82f, 0.63f, 0.28f, 0.9f);
+            button.style.borderLeftColor = new Color(0.75f, 0.52f, 0.28f, 0.82f);
+            button.style.borderRightColor = new Color(0.08f, 0.05f, 0.03f, 0.8f);
+            button.style.borderTopColor = new Color(0.9f, 0.72f, 0.44f, 0.72f);
             button.style.borderBottomColor = new Color(0f, 0f, 0f, 0.85f);
-            button.style.borderTopLeftRadius = 6f;
-            button.style.borderTopRightRadius = 6f;
-            button.style.borderBottomLeftRadius = 6f;
-            button.style.borderBottomRightRadius = 6f;
+            button.style.borderTopLeftRadius = 2f;
+            button.style.borderTopRightRadius = 5f;
+            button.style.borderBottomLeftRadius = 5f;
+            button.style.borderBottomRightRadius = 2f;
 
             Label title = new Label();
             title.style.height = 58f;
             title.style.whiteSpace = WhiteSpace.Normal;
-            title.style.color = Color.white;
+            title.style.color = new Color(0.98f, 0.92f, 0.8f, 1f);
             title.style.fontSize = 24f;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
 
             Label effect = new Label();
             effect.style.marginTop = 6f;
-            effect.style.color = new Color(1f, 0.78f, 0.3f, 1f);
+            effect.style.color = new Color(0.9f, 0.62f, 0.26f, 1f);
             effect.style.fontSize = 17f;
             effect.style.unityFontStyleAndWeight = FontStyle.Bold;
             effect.style.whiteSpace = WhiteSpace.Normal;
@@ -295,7 +312,7 @@ namespace Shop
             Label description = new Label();
             description.style.marginTop = 18f;
             description.style.whiteSpace = WhiteSpace.Normal;
-            description.style.color = new Color(1f, 1f, 1f, 0.72f);
+            description.style.color = new Color(0.92f, 0.84f, 0.7f, 0.76f);
             description.style.fontSize = 15f;
 
             VisualElement spacer = new VisualElement();
@@ -304,14 +321,14 @@ namespace Shop
             Label price = new Label();
             price.style.height = 48f;
             price.style.unityTextAlign = TextAnchor.MiddleCenter;
-            price.style.color = Color.white;
+            price.style.color = new Color(0.98f, 0.92f, 0.8f, 1f);
             price.style.fontSize = 19f;
             price.style.unityFontStyleAndWeight = FontStyle.Bold;
-            price.style.backgroundColor = new Color(0.62f, 0.1f, 0.14f, 1f);
-            price.style.borderTopLeftRadius = 4f;
-            price.style.borderTopRightRadius = 4f;
-            price.style.borderBottomLeftRadius = 4f;
-            price.style.borderBottomRightRadius = 4f;
+            price.style.backgroundColor = new Color(0.45f, 0.16f, 0.12f, 1f);
+            price.style.borderTopLeftRadius = 2f;
+            price.style.borderTopRightRadius = 2f;
+            price.style.borderBottomLeftRadius = 2f;
+            price.style.borderBottomRightRadius = 2f;
 
             button.Add(title);
             button.Add(effect);
@@ -367,7 +384,7 @@ namespace Shop
             if (candidates.Count == 0)
                 return null;
 
-            return candidates[Random.Range(0, candidates.Count)];
+            return candidates[UnityEngine.Random.Range(0, candidates.Count)];
         }
 
         private bool IsAlreadyVisible(ShopItemDefinition item, int replacingIndex)
@@ -413,20 +430,34 @@ namespace Shop
                 return;
             }
 
+            if (_isBuying)
+                return;
+
             if (!wallet.TrySpend(item.Price))
             {
                 SetMessage("Not enough money.");
                 return;
             }
 
+            _isBuying = true;
+            PlayPurchaseSound();
             ApplyItem(item);
 
             if (item.UniquePurchase)
                 _purchasedUniqueIds.Add(item.UniqueId);
 
-            _stock[slotIndex] = PickRandomItem(slotIndex);
             SetMessage($"{item.DisplayName} purchased.");
-            Refresh();
+            RefreshMoney();
+
+            ShopSlotView slotView = _slotViews[slotIndex];
+            slotView.PlayReplaceAnimation(slotAnimationDuration, () =>
+            {
+                _stock[slotIndex] = PickRandomItem(slotIndex);
+                RefreshSlot(slotIndex);
+            }, () =>
+            {
+                _isBuying = false;
+            });
         }
 
         private bool CanApplyItem(ShopItemDefinition item, out string reason)
@@ -501,19 +532,24 @@ namespace Shop
 
         private void HandleMoneyChanged(int money)
         {
-            Refresh();
+            RefreshMoney();
         }
 
         private void Refresh()
         {
-            if (_moneyLabel != null)
-                _moneyLabel.text = $"$ {wallet?.Money ?? 0}";
+            RefreshMoney();
 
             if (itemList == null)
                 SetMessage($"Shop item list not found: Resources/{DefaultItemListResourcePath}.asset");
 
             for (int i = 0; i < _slotViews.Count; i++)
                 RefreshSlot(i);
+        }
+
+        private void RefreshMoney()
+        {
+            if (_moneyLabel != null)
+                _moneyLabel.text = $"$ {wallet?.Money ?? 0}";
         }
 
         private void RefreshSlot(int slotIndex)
@@ -564,6 +600,39 @@ namespace Shop
         {
             if (_messageLabel != null)
                 _messageLabel.text = message;
+        }
+
+        private void ResolvePurchaseAudio()
+        {
+            if (purchaseSound == null)
+                purchaseSound = Resources.Load<AudioClip>(DefaultPurchaseSoundResourcePath);
+
+            if (purchaseAudioSource == null)
+                purchaseAudioSource = GetComponent<AudioSource>();
+
+            if (purchaseAudioSource == null)
+                purchaseAudioSource = gameObject.AddComponent<AudioSource>();
+
+            purchaseAudioSource.playOnAwake = false;
+            purchaseAudioSource.loop = false;
+            purchaseAudioSource.spatialBlend = 0f;
+        }
+
+        private void PlayPurchaseSound()
+        {
+            if (purchaseAudioSource == null || purchaseSound == null)
+                return;
+
+            purchaseAudioSource.PlayOneShot(purchaseSound, purchaseSoundVolume * GameSettings.SfxVolume);
+        }
+
+        private void PlayAllSlotEnterAnimations()
+        {
+            for (int i = 0; i < _slotViews.Count; i++)
+            {
+                float delay = i * Mathf.Max(0f, slotEnterDelay);
+                _slotViews[i].PlayEnterAnimation(slotAnimationDuration, delay);
+            }
         }
 
         private void BlockPlayerInputForShop()
@@ -646,9 +715,25 @@ namespace Shop
             private Label Description { get; }
             private Label Price { get; }
 
+            public void PlayEnterAnimation(float duration, float delay)
+            {
+                PlayAnimation(duration, delay, 0f, 1f, 0.92f, 1f, null, null);
+            }
+
+            public void PlayReplaceAnimation(float duration, Action onMiddle, Action onComplete)
+            {
+                float halfDuration = Mathf.Max(0.01f, duration * 0.5f);
+                PlayAnimation(halfDuration, 0f, 1f, 0f, 1f, 0.9f, onMiddle, () =>
+                {
+                    PlayAnimation(halfDuration, 0f, 0f, 1f, 0.9f, 1f, null, onComplete);
+                });
+            }
+
             public void SetItem(ShopItemDefinition item, string effectText)
             {
                 Button.SetEnabled(true);
+                Button.style.opacity = 1f;
+                Button.style.scale = new Scale(Vector3.one);
                 Title.text = item.DisplayName;
                 Effect.text = effectText;
                 Description.text = item.Description;
@@ -658,10 +743,60 @@ namespace Shop
             public void SetEmpty()
             {
                 Button.SetEnabled(false);
+                Button.style.opacity = 1f;
+                Button.style.scale = new Scale(Vector3.one);
                 Title.text = "SOLD OUT";
                 Effect.text = string.Empty;
                 Description.text = "No available item remains in the shop list.";
                 Price.text = "-";
+            }
+
+            private void PlayAnimation(
+                float duration,
+                float delay,
+                float fromOpacity,
+                float toOpacity,
+                float fromScale,
+                float toScale,
+                Action onStart,
+                Action onComplete)
+            {
+                float safeDuration = Mathf.Max(0.01f, duration);
+                float startTime = Time.unscaledTime + Mathf.Max(0f, delay);
+                bool hasStarted = false;
+
+                Button.style.opacity = fromOpacity;
+                Button.style.scale = new Scale(new Vector3(fromScale, fromScale, 1f));
+
+                IVisualElementScheduledItem scheduledItem = null;
+                scheduledItem = Button.schedule.Execute(() =>
+                {
+                    float elapsed = Time.unscaledTime - startTime;
+                    if (elapsed < 0f)
+                        return;
+
+                    if (!hasStarted)
+                    {
+                        hasStarted = true;
+                        onStart?.Invoke();
+                    }
+
+                    float t = Mathf.Clamp01(elapsed / safeDuration);
+                    float eased = 1f - Mathf.Pow(1f - t, 3f);
+                    float opacity = Mathf.Lerp(fromOpacity, toOpacity, eased);
+                    float scale = Mathf.Lerp(fromScale, toScale, eased);
+
+                    Button.style.opacity = opacity;
+                    Button.style.scale = new Scale(new Vector3(scale, scale, 1f));
+
+                    if (t < 1f)
+                        return;
+
+                    Button.style.opacity = toOpacity;
+                    Button.style.scale = new Scale(new Vector3(toScale, toScale, 1f));
+                    scheduledItem?.Pause();
+                    onComplete?.Invoke();
+                }).Every(16);
             }
         }
     }

@@ -9,6 +9,7 @@ public static class GameSettings
     private const string MasterVolumeKey = "Settings.MasterVolume";
     private const string BgmVolumeKey = "Settings.BgmVolume";
     private const string SfxVolumeKey = "Settings.SfxVolume";
+    private const string TvVolumeKey = "Settings.TvVolume";
     private const string FullscreenKey = "Settings.Fullscreen";
     private const string ResolutionWidthKey = "Settings.ResolutionWidth";
     private const string ResolutionHeightKey = "Settings.ResolutionHeight";
@@ -36,6 +37,12 @@ public static class GameSettings
     {
         get => Mathf.Clamp01(PlayerPrefs.GetFloat(SfxVolumeKey, 1f));
         set => PlayerPrefs.SetFloat(SfxVolumeKey, Mathf.Clamp01(value));
+    }
+
+    public static float TvVolume
+    {
+        get => Mathf.Clamp01(PlayerPrefs.GetFloat(TvVolumeKey, 1f));
+        set => PlayerPrefs.SetFloat(TvVolumeKey, Mathf.Clamp01(value));
     }
 
     public static bool Fullscreen

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -25,6 +26,7 @@ namespace UI.Presenter
         private Slider _masterVolumeSlider;
         private Slider _bgmVolumeSlider;
         private Slider _sfxVolumeSlider;
+        private Slider _tvVolumeSlider;
         private DropdownField _resolutionDropdown;
         private Toggle _fullscreenToggle;
         private VisualElement _mouseSensitivityValueContainer;
@@ -33,6 +35,7 @@ namespace UI.Presenter
         private Label _masterVolumeValueLabel;
         private Label _bgmVolumeValueLabel;
         private Label _sfxVolumeValueLabel;
+        private Label _tvVolumeValueLabel;
 
         public bool IsOpen => _root != null && _root.style.display == DisplayStyle.Flex;
 
@@ -147,6 +150,7 @@ namespace UI.Presenter
             _masterVolumeSlider = root.Q<Slider>("MasterVolumeSlider");
             _bgmVolumeSlider = root.Q<Slider>("BgmVolumeSlider");
             _sfxVolumeSlider = root.Q<Slider>("SfxVolumeSlider");
+            _tvVolumeSlider = root.Q<Slider>("TvVolumeSlider");
             _resolutionDropdown = root.Q<DropdownField>("ResolutionDropdown");
             _fullscreenToggle = root.Q<Toggle>("FullscreenToggle");
             _mouseSensitivityValueContainer = root.Q<VisualElement>("MouseSensitivityValueContainer");
@@ -155,6 +159,7 @@ namespace UI.Presenter
             _masterVolumeValueLabel = root.Q<Label>("MasterVolumeValueLabel");
             _bgmVolumeValueLabel = root.Q<Label>("BgmVolumeValueLabel");
             _sfxVolumeValueLabel = root.Q<Label>("SfxVolumeValueLabel");
+            _tvVolumeValueLabel = root.Q<Label>("TvVolumeValueLabel");
         }
 
         private void ConfigureTextInputStyle(TextField textField, Color textColor, TextAnchor textAlign)
@@ -181,6 +186,7 @@ namespace UI.Presenter
             _masterVolumeSlider?.RegisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.RegisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.RegisterValueChangedCallback(HandleSfxVolumeChanged);
+            _tvVolumeSlider?.RegisterValueChangedCallback(HandleTvVolumeChanged);
             _resolutionDropdown?.RegisterValueChangedCallback(HandleResolutionChanged);
             _fullscreenToggle?.RegisterValueChangedCallback(HandleFullscreenChanged);
         }
@@ -195,6 +201,7 @@ namespace UI.Presenter
             _masterVolumeSlider?.UnregisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.UnregisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.UnregisterValueChangedCallback(HandleSfxVolumeChanged);
+            _tvVolumeSlider?.UnregisterValueChangedCallback(HandleTvVolumeChanged);
             _resolutionDropdown?.UnregisterValueChangedCallback(HandleResolutionChanged);
             _fullscreenToggle?.UnregisterValueChangedCallback(HandleFullscreenChanged);
         }
@@ -208,7 +215,10 @@ namespace UI.Presenter
             LoadSettingsToUI();
 
             if (_root != null)
+            {
                 _root.style.display = DisplayStyle.Flex;
+                PanelOpenEffect.Play(_root);
+            }
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -285,6 +295,7 @@ namespace UI.Presenter
             SetSliderValue(_masterVolumeSlider, GameSettings.MasterVolume);
             SetSliderValue(_bgmVolumeSlider, GameSettings.BgmVolume);
             SetSliderValue(_sfxVolumeSlider, GameSettings.SfxVolume);
+            SetSliderValue(_tvVolumeSlider, GameSettings.TvVolume);
 
             if (_fullscreenToggle != null)
                 _fullscreenToggle.SetValueWithoutNotify(GameSettings.Fullscreen);
@@ -371,6 +382,13 @@ namespace UI.Presenter
             RefreshSettingLabels();
         }
 
+        private void HandleTvVolumeChanged(ChangeEvent<float> evt)
+        {
+            GameSettings.TvVolume = evt.newValue;
+            GameSettings.Save();
+            RefreshSettingLabels();
+        }
+
         private void HandleResolutionChanged(ChangeEvent<string> evt)
         {
             int index = _resolutionLabels.IndexOf(evt.newValue);
@@ -410,6 +428,9 @@ namespace UI.Presenter
 
             if (_sfxVolumeValueLabel != null)
                 _sfxVolumeValueLabel.text = FormatPercent(GameSettings.SfxVolume);
+
+            if (_tvVolumeValueLabel != null)
+                _tvVolumeValueLabel.text = FormatPercent(GameSettings.TvVolume);
         }
 
         private void ShowMouseSensitivityInput()

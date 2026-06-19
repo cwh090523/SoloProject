@@ -1716,8 +1716,9 @@ GameObject:
   - component: {fileID: 2919843442428622273}
   - component: {fileID: 3971248814007559464}
   - component: {fileID: 7452273588826883872}
+  - component: {fileID: 2061022864331922171}
   m_Layer: 6
-  m_Name: MiniBoss_SkeletonEnemy
+  m_Name: MiniBoss_SkeletonEnemy 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1857,6 +1858,8 @@ MonoBehaviour:
   lockOwnerLocalTransform: 0
   playIdleOnEnable: 0
   hitSpeedMultiplier: 0.35
+  reactionCooldown: 0
+  reactionChance: 1
 --- !u!114 &2919843442428622273
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1882,7 +1885,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3632297936653311901}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2fd7e26a07f2434b9419881c3a901a10, type: 3}
   m_Name: 
@@ -1958,6 +1961,22 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.6, y: 1.54, z: 0.4}
   m_Center: {x: 0, y: 0.74, z: 0}
+--- !u!114 &2061022864331922171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3632297936653311901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f1dcd56ccf709244839d2c394e9c146, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossHealthTarget
+  health: {fileID: 6249402995657341953}
+  displayName: BOSS
+  showWhenFullHealth: 1
+  hideOnDeath: 1
 --- !u!1 &3686286847837050783
 GameObject:
   m_ObjectHideFlags: 0

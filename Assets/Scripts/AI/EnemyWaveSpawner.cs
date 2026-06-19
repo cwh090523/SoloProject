@@ -302,6 +302,7 @@ public class EnemyWaveSpawner : MonoBehaviour
         if (enemyHealth == null)
             return;
 
+        EnsureBossHealthTarget(enemy, enemyHealth, prefab);
         EnsureEnemyHealthBar(enemyHealth);
         enemyHealth.RestoreFullHealth();
         enemyHealth.Died += () => HandleEnemyDied(enemyHealth);
@@ -313,10 +314,71 @@ public class EnemyWaveSpawner : MonoBehaviour
         if (!addHealthBarOnSpawn || enemyHealth == null)
             return;
 
+        if (IsBossHealth(enemyHealth))
+            return;
+
         if (enemyHealth.GetComponent<EnemyHealthBarUI>() != null)
             return;
 
         enemyHealth.gameObject.AddComponent<EnemyHealthBarUI>();
+    }
+
+    private void EnsureBossHealthTarget(GameObject enemy, Health enemyHealth, GameObject sourcePrefab)
+    {
+        if (enemy == null || enemyHealth == null)
+            return;
+
+        if (!IsBossEnemy(enemy, enemyHealth, sourcePrefab))
+            return;
+
+        BossHealthTarget bossTarget = enemyHealth.GetComponent<BossHealthTarget>();
+        if (bossTarget == null)
+            bossTarget = enemyHealth.GetComponentInParent<BossHealthTarget>();
+        if (bossTarget == null)
+            bossTarget = enemyHealth.gameObject.AddComponent<BossHealthTarget>();
+
+        bossTarget.Initialize(enemyHealth, GetBossDisplayName(enemy, sourcePrefab));
+        DisableRegularHealthBar(enemyHealth);
+    }
+
+    private void DisableRegularHealthBar(Health enemyHealth)
+    {
+        EnemyHealthBarUI healthBar = enemyHealth.GetComponent<EnemyHealthBarUI>();
+        if (healthBar != null)
+            healthBar.enabled = false;
+    }
+
+    private bool IsBossHealth(Health enemyHealth)
+    {
+        if (enemyHealth == null)
+            return false;
+
+        return enemyHealth.GetComponent<BossHealthTarget>() != null ||
+               enemyHealth.GetComponentInParent<BossHealthTarget>() != null ||
+               IsBossName(enemyHealth.gameObject.name);
+    }
+
+    private bool IsBossEnemy(GameObject enemy, Health enemyHealth, GameObject sourcePrefab)
+    {
+        if (enemyHealth != null &&
+            (enemyHealth.GetComponent<BossHealthTarget>() != null || enemyHealth.GetComponentInParent<BossHealthTarget>() != null))
+            return true;
+
+        return IsBossName(enemy == null ? null : enemy.name) ||
+               IsBossName(enemyHealth == null ? null : enemyHealth.gameObject.name) ||
+               IsBossName(sourcePrefab == null ? null : sourcePrefab.name);
+    }
+
+    private bool IsBossName(string objectName)
+    {
+        return !string.IsNullOrWhiteSpace(objectName) &&
+               objectName.IndexOf("Boss", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private string GetBossDisplayName(GameObject enemy, GameObject sourcePrefab)
+    {
+        string rawName = sourcePrefab != null ? sourcePrefab.name : enemy.name;
+        return rawName.Replace("(Clone)", string.Empty).Replace("_", " ").Trim();
     }
 
     private void SnapEnemyToNavMesh(GameObject enemy, Vector3 spawnPosition)

@@ -16,8 +16,11 @@ public class DamageHitReaction : MonoBehaviour,  IEnemySpeedModifier
     [SerializeField] private bool lockOwnerLocalTransform;
     [SerializeField] private bool playIdleOnEnable;
     [SerializeField] private float hitSpeedMultiplier = 0.35f;
+    [SerializeField] private float reactionCooldown;
+    [SerializeField, Range(0f, 1f)] private float reactionChance = 1f;
 
     private Coroutine _returnRoutine;
+    private float _nextReactionTime;
     private Transform _animatorTransform;
     private Vector3 _baseAnimatorLocalPosition;
     private Quaternion _baseAnimatorLocalRotation;
@@ -63,6 +66,9 @@ public class DamageHitReaction : MonoBehaviour,  IEnemySpeedModifier
         if (animator == null)
             return;
 
+        if (Time.time < _nextReactionTime || UnityEngine.Random.value > reactionChance)
+            return;
+
         string stateName = isHeadshot ? headHitStateName : bodyHitStateName;
         if (string.IsNullOrWhiteSpace(stateName))
             return;
@@ -70,6 +76,7 @@ public class DamageHitReaction : MonoBehaviour,  IEnemySpeedModifier
         if (_returnRoutine != null)
             StopCoroutine(_returnRoutine);
 
+        _nextReactionTime = Time.time + Mathf.Max(0f, reactionCooldown);
         ReactionStarted?.Invoke();
         animator.CrossFadeInFixedTime(stateName, crossFadeDuration, 0, 0f);
         _returnRoutine = StartCoroutine(ReturnToIdleRoutine(stateName));

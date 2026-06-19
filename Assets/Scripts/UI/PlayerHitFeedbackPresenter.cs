@@ -10,6 +10,7 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
 {
     [SerializeField] private UIDocument document;
     [SerializeField] private Health playerHealth;
+    [SerializeField] private GameStateManager gameStateManager;
     [SerializeField] private string playerObjectName = "Player3";
     [SerializeField] private string containerName = "PlayerHitContainer";
     [Header("ShakeCamera")]
@@ -38,6 +39,8 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
     private float _defaultVignetteIntensity;
     private bool _hasVignette;
     private Coroutine _shakeRoutine;
+    private Vector3 _cameraBaseLocalPosition;
+    private bool _hasCameraBaseLocalPosition;
 
     private void Awake()
     {
@@ -56,16 +59,30 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
 
         if (playerHealth != null)
             playerHealth.Damaged += HandleDamaged;
+
+        if (gameStateManager != null)
+            gameStateManager.StateChanged += HandleGameStateChanged;
     }
 
     private void OnDisable()
     {
         if (playerHealth != null)
             playerHealth.Damaged -= HandleDamaged;
+
+        if (gameStateManager != null)
+            gameStateManager.StateChanged -= HandleGameStateChanged;
+
+        StopShakeAndRestoreCamera();
     }
 
     private void Update()
     {
+        if (IsFeedbackPaused())
+        {
+            StopShakeAndRestoreCamera();
+            return;
+        }
+
         float targetOpacity = GetLowHealthOpacity();
         _currentOpacity = Mathf.MoveTowards(_currentOpacity, targetOpacity, fadeOutSpeed * Time.deltaTime);
         ApplyOpacity(_currentOpacity);
@@ -79,6 +96,9 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
     {
         if (document == null)
             document = GetComponent<UIDocument>();
+
+        if (gameStateManager == null)
+            gameStateManager = FindFirstObjectByType<GameStateManager>();
 
         if (playerHealth != null)
             return;
@@ -127,11 +147,15 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
         if (damage <= 0f)
             return;
 
+        if (IsFeedbackPaused())
+            return;
+
         _currentOpacity = hitOpacity;
         _currentVignetteIntensity = maxVignetteIntensity;
         ApplyOpacity(_currentOpacity);
         ApplyVignetteIntensity(_currentVignetteIntensity);
-        if(_shakeRoutine != null) StopCoroutine(_shakeRoutine);
+
+        StopShakeAndRestoreCamera();
 
         _shakeRoutine = StartCoroutine(ShakeCameraCoroutine());
     }
@@ -140,22 +164,62 @@ public class PlayerHitFeedbackPresenter : MonoBehaviour
     {
        if(cameraTransform == null) yield break;
        
-       Vector3 baseLocalPosition = cameraTransform.localPosition;
+       CacheCameraBaseLocalPosition();
        float elapsed = 0f;
 
        while (elapsed < shakeDuration)
        {
+           if (IsFeedbackPaused())
+               break;
+
            elapsed += Time.deltaTime;
            
            float fade = 1f - Mathf.Clamp01(elapsed / shakeDuration);
            Vector2 randomOffset = Random.insideUnitCircle * shakeStrength * fade;
            
-           cameraTransform.localPosition = baseLocalPosition + new Vector3(randomOffset.x,  randomOffset.y, 0);
+           cameraTransform.localPosition = _cameraBaseLocalPosition + new Vector3(randomOffset.x,  randomOffset.y, 0);
            
            yield return null;
        }
-       cameraTransform.localPosition = baseLocalPosition;
+       RestoreCameraLocalPosition();
        _shakeRoutine = null;
+    }
+
+    private void HandleGameStateChanged(GameState state)
+    {
+        if (state == GameState.Paused || state == GameState.GameOver || state == GameState.StageClear)
+            StopShakeAndRestoreCamera();
+    }
+
+    private bool IsFeedbackPaused()
+    {
+        return gameStateManager != null && gameStateManager.IsPaused || Time.timeScale <= 0f;
+    }
+
+    private void StopShakeAndRestoreCamera()
+    {
+        if (_shakeRoutine != null)
+        {
+            StopCoroutine(_shakeRoutine);
+            _shakeRoutine = null;
+        }
+
+        RestoreCameraLocalPosition();
+    }
+
+    private void CacheCameraBaseLocalPosition()
+    {
+        if (cameraTransform == null || _hasCameraBaseLocalPosition)
+            return;
+
+        _cameraBaseLocalPosition = cameraTransform.localPosition;
+        _hasCameraBaseLocalPosition = true;
+    }
+
+    private void RestoreCameraLocalPosition()
+    {
+        if (cameraTransform != null && _hasCameraBaseLocalPosition)
+            cameraTransform.localPosition = _cameraBaseLocalPosition;
     }
 
     private float GetLowHealthOpacity()

@@ -14,6 +14,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float airControl = 0.45f;
     [SerializeField] private PlayerStamina stamina;
+    [SerializeField] private PlayerWeapon playerWeapon;
+    [SerializeField] private float fireMoveSlowDuration = 0.25f;
 
     [Header("Jump")] [SerializeField] private float jumpForce = 6f;
     [SerializeField] private float groundCheckRadius = 0.24f;
@@ -36,6 +38,7 @@ public class PlayerController : MonoBehaviour
     private bool _wantsToCrouch;
     private bool _isCrouching;
     private Vector3 _cameraRootBaseLocalPosition;
+    private float _fireMoveSlowUntilTime;
 
     public Vector2 MoveInput => _moveInput;
     public bool IsMoving => _moveInput.sqrMagnitude > 0.01f;
@@ -63,10 +66,18 @@ public class PlayerController : MonoBehaviour
 
         if (stamina == null)
             stamina = GetComponent<PlayerStamina>();
+
+        if (playerWeapon == null)
+            playerWeapon = GetComponent<PlayerWeapon>();
+        if (playerWeapon == null)
+            playerWeapon = GetComponentInChildren<PlayerWeapon>();
     }
 
     private void OnEnable()
     {
+        if (playerWeapon != null)
+            playerWeapon.Fired += HandleWeaponFired;
+
         if (playerInput == null)
             return;
 
@@ -78,6 +89,9 @@ public class PlayerController : MonoBehaviour
 
     private void OnDisable()
     {
+        if (playerWeapon != null)
+            playerWeapon.Fired -= HandleWeaponFired;
+
         if (playerInput == null)
             return;
 
@@ -121,6 +135,11 @@ public class PlayerController : MonoBehaviour
         _wantsToCrouch = isPressed;
     }
 
+    private void HandleWeaponFired()
+    {
+        _fireMoveSlowUntilTime = Time.time + Mathf.Max(0f, fireMoveSlowDuration);
+    }
+
     private void HandleJump()
     {
         if (!_isGrounded)
@@ -146,7 +165,7 @@ public class PlayerController : MonoBehaviour
         if (moveDirection.sqrMagnitude > 1f)
             moveDirection.Normalize();
 
-        float targetSpeed = _isCrouching ? crouchSpeed : (_isSprinting ? sprintSpeed : moveSpeed);
+        float targetSpeed = ShouldUseSlowMoveSpeed() ? crouchSpeed : (_isSprinting ? sprintSpeed : moveSpeed);
         Vector3 targetVelocity = moveDirection * targetSpeed;
         Vector3 currentVelocity = _rigidbody.linearVelocity;
         Vector3 horizontalVelocity = new Vector3(currentVelocity.x, 0f, currentVelocity.z);
@@ -198,6 +217,17 @@ public class PlayerController : MonoBehaviour
     {
         bool hasMoveInput = _moveInput.sqrMagnitude > 0.01f;
         bool canUseStamina = stamina == null || stamina.CanSprint;
-        _isSprinting = _wantsToSprint && hasMoveInput && !_isCrouching && canUseStamina;
+        _isSprinting = _wantsToSprint && hasMoveInput && !ShouldUseSlowMoveSpeed() && canUseStamina;
+    }
+
+    private bool ShouldUseSlowMoveSpeed()
+    {
+        if (_isCrouching)
+            return true;
+
+        if (playerWeapon != null && playerWeapon.IsAiming)
+            return true;
+
+        return Time.time < _fireMoveSlowUntilTime;
     }
 }

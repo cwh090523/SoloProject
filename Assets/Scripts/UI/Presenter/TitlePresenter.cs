@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
+using UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -11,12 +12,14 @@ namespace UI.Presenter
     {
         [SerializeField] private UIDocument document;
         [SerializeField] private string gameSceneName = "TEST_SCENE";
+        [SerializeField] private string tutoSceneName = "DEV_SCENE";
 
         private readonly List<Resolution> _resolutionOptions = new();
         private readonly List<string> _resolutionLabels = new();
 
         private VisualElement _settingsPanel;
         private Button _startButton;
+        private Button _tutoButton;
         private Button _settingButton;
         private Button _quitButton;
         private Button _closeSettingButton;
@@ -24,6 +27,7 @@ namespace UI.Presenter
         private Slider _masterVolumeSlider;
         private Slider _bgmVolumeSlider;
         private Slider _sfxVolumeSlider;
+        private Slider _tvVolumeSlider;
         private DropdownField _resolutionDropdown;
         private Toggle _fullscreenToggle;
         private VisualElement _mouseSensitivityValueContainer;
@@ -32,6 +36,7 @@ namespace UI.Presenter
         private Label _masterVolumeValueLabel;
         private Label _bgmVolumeValueLabel;
         private Label _sfxVolumeValueLabel;
+        private Label _tvVolumeValueLabel;
 
         private static readonly Color HoverBorderColor = new Color(1f, 0.84f, 0.28f, 1f);
         private static readonly Color NormalBorderColor = new Color(1f, 1f, 1f, 0f);
@@ -53,6 +58,9 @@ namespace UI.Presenter
         {
             if (_startButton != null)
                 _startButton.clicked += StartGame;
+            
+            if (_tutoButton != null)
+                _tutoButton.clicked += TutoGame;
 
             if (_settingButton != null)
                 _settingButton.clicked += ShowSettings;
@@ -64,6 +72,7 @@ namespace UI.Presenter
                 _closeSettingButton.clicked += HideSettings;
 
             RegisterHover(_startButton);
+            RegisterHover(_tutoButton);
             RegisterHover(_settingButton);
             RegisterHover(_quitButton);
             RegisterHover(_closeSettingButton);
@@ -75,6 +84,9 @@ namespace UI.Presenter
             if (_startButton != null)
                 _startButton.clicked -= StartGame;
 
+            if (_tutoButton != null)
+                _tutoButton.clicked -= TutoGame;
+
             if (_settingButton != null)
                 _settingButton.clicked -= ShowSettings;
 
@@ -85,6 +97,7 @@ namespace UI.Presenter
                 _closeSettingButton.clicked -= HideSettings;
 
             UnregisterHover(_startButton);
+            UnregisterHover(_tutoButton);
             UnregisterHover(_settingButton);
             UnregisterHover(_quitButton);
             UnregisterHover(_closeSettingButton);
@@ -99,6 +112,7 @@ namespace UI.Presenter
             VisualElement root = document.rootVisualElement;
             _settingsPanel = root.Q<VisualElement>("SettingsPanel");
             _startButton = root.Q<Button>("StartButton");
+            _tutoButton = root.Q<Button>("TutoButton");
             _settingButton = root.Q<Button>("SettingButton");
             _quitButton = root.Q<Button>("QuitButton");
             _closeSettingButton = root.Q<Button>("CloseSettingButton");
@@ -106,6 +120,7 @@ namespace UI.Presenter
             _masterVolumeSlider = root.Q<Slider>("MasterVolumeSlider");
             _bgmVolumeSlider = root.Q<Slider>("BgmVolumeSlider");
             _sfxVolumeSlider = root.Q<Slider>("SfxVolumeSlider");
+            _tvVolumeSlider = root.Q<Slider>("TvVolumeSlider");
             _resolutionDropdown = root.Q<DropdownField>("ResolutionDropdown");
             _fullscreenToggle = root.Q<Toggle>("FullscreenToggle");
             _mouseSensitivityValueContainer = root.Q<VisualElement>("MouseSensitivityValueContainer");
@@ -114,6 +129,7 @@ namespace UI.Presenter
             _masterVolumeValueLabel = root.Q<Label>("MasterVolumeValueLabel");
             _bgmVolumeValueLabel = root.Q<Label>("BgmVolumeValueLabel");
             _sfxVolumeValueLabel = root.Q<Label>("SfxVolumeValueLabel");
+            _tvVolumeValueLabel = root.Q<Label>("TvVolumeValueLabel");
         }
 
         private void ConfigureTextInputStyle(TextField textField, Color textColor, TextAnchor textAlign)
@@ -140,6 +156,7 @@ namespace UI.Presenter
             _masterVolumeSlider?.RegisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.RegisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.RegisterValueChangedCallback(HandleSfxVolumeChanged);
+            _tvVolumeSlider?.RegisterValueChangedCallback(HandleTvVolumeChanged);
             _resolutionDropdown?.RegisterValueChangedCallback(HandleResolutionChanged);
             _fullscreenToggle?.RegisterValueChangedCallback(HandleFullscreenChanged);
         }
@@ -154,6 +171,7 @@ namespace UI.Presenter
             _masterVolumeSlider?.UnregisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.UnregisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.UnregisterValueChangedCallback(HandleSfxVolumeChanged);
+            _tvVolumeSlider?.UnregisterValueChangedCallback(HandleTvVolumeChanged);
             _resolutionDropdown?.UnregisterValueChangedCallback(HandleResolutionChanged);
             _fullscreenToggle?.UnregisterValueChangedCallback(HandleFullscreenChanged);
         }
@@ -198,6 +216,7 @@ namespace UI.Presenter
             SetSliderValue(_masterVolumeSlider, GameSettings.MasterVolume);
             SetSliderValue(_bgmVolumeSlider, GameSettings.BgmVolume);
             SetSliderValue(_sfxVolumeSlider, GameSettings.SfxVolume);
+            SetSliderValue(_tvVolumeSlider, GameSettings.TvVolume);
 
             if (_fullscreenToggle != null)
                 _fullscreenToggle.SetValueWithoutNotify(GameSettings.Fullscreen);
@@ -226,10 +245,20 @@ namespace UI.Presenter
             SceneFadeTransition.LoadScene(gameSceneName);
         }
 
+        private void TutoGame()
+        {
+            GameSettings.ApplyAudio();
+            GameSettings.ApplyDisplay();
+            SceneFadeTransition.LoadScene(tutoSceneName);
+        }
+
         private void ShowSettings()
         {
             if (_settingsPanel != null)
+            {
                 _settingsPanel.style.display = DisplayStyle.Flex;
+                PanelOpenEffect.Play(_settingsPanel);
+            }
         }
 
         private void QuitGame()
@@ -310,6 +339,13 @@ namespace UI.Presenter
             RefreshSettingLabels();
         }
 
+        private void HandleTvVolumeChanged(ChangeEvent<float> evt)
+        {
+            GameSettings.TvVolume = evt.newValue;
+            GameSettings.Save();
+            RefreshSettingLabels();
+        }
+
         private void HandleResolutionChanged(ChangeEvent<string> evt)
         {
             int index = _resolutionLabels.IndexOf(evt.newValue);
@@ -349,6 +385,9 @@ namespace UI.Presenter
 
             if (_sfxVolumeValueLabel != null)
                 _sfxVolumeValueLabel.text = FormatPercent(GameSettings.SfxVolume);
+
+            if (_tvVolumeValueLabel != null)
+                _tvVolumeValueLabel.text = FormatPercent(GameSettings.TvVolume);
         }
 
         private string FormatPercent(float value)

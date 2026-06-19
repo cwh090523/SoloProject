@@ -70,6 +70,8 @@ public class GameStateManager : MonoBehaviour
         if (IsPaused)
             Time.timeScale = 1f;
 
+        SetAudioPaused(false);
+
         if (playerHealth != null)
             playerHealth.Died -= HandlePlayerDied;
 
@@ -109,6 +111,7 @@ public class GameStateManager : MonoBehaviour
 
         _stateBeforePause = CurrentState;
         Time.timeScale = 0f;
+        SetAudioPaused(true);
         SetState(GameState.Paused);
         SetPlayerControlEnabled(false);
     }
@@ -119,6 +122,7 @@ public class GameStateManager : MonoBehaviour
             return;
 
         Time.timeScale = 1f;
+        SetAudioPaused(false);
         SetState(_stateBeforePause == GameState.Paused ? GameState.Combat : _stateBeforePause);
         SetPlayerControlEnabled(true);
     }
@@ -188,6 +192,7 @@ public class GameStateManager : MonoBehaviour
 
         SetState(GameState.GameOver);
         Time.timeScale = 1f;
+        SetAudioPaused(false);
 
         if (waveSpawner != null)
             waveSpawner.StopWaves();
@@ -203,6 +208,7 @@ public class GameStateManager : MonoBehaviour
 
         SetState(GameState.StageClear);
         Time.timeScale = 1f;
+        SetAudioPaused(false);
         StopPlayerAnimationAtIdle();
         SetPlayerControlEnabled(false);
     }
@@ -254,5 +260,10 @@ public class GameStateManager : MonoBehaviour
             playerRigidbody.linearVelocity = Vector3.zero;
             playerRigidbody.angularVelocity = Vector3.zero;
         }
+    }
+
+    private void SetAudioPaused(bool isPaused)
+    {
+        AudioListener.pause = isPaused;
     }
 }

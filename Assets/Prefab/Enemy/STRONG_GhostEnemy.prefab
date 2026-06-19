@@ -1858,6 +1858,8 @@ MonoBehaviour:
   lockOwnerLocalTransform: 0
   playIdleOnEnable: 0
   hitSpeedMultiplier: 0.8
+  reactionCooldown: 0
+  reactionChance: 1
 --- !u!114 &2919843442428622273
 MonoBehaviour:
   m_ObjectHideFlags: 0
