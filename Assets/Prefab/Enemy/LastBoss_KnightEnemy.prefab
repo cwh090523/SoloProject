@@ -38484,6 +38484,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c06f0ba9a0ae64b4bb08c2c2b91de09a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.6409477
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c06f0ba9a0ae64b4bb08c2c2b91de09a, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.4297361
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c06f0ba9a0ae64b4bb08c2c2b91de09a, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.7796193
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: c06f0ba9a0ae64b4bb08c2c2b91de09a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -40093,6 +40105,7 @@ MonoBehaviour:
   agentAngularSpeed: 720
   destinationRefreshInterval: 0.15
   destinationMoveThreshold: 0.35
+  keepRootUpright: 1
   jumpStateName: Jump_Start_0
   jumpDuration: 0.65
   jumpHeight: 1.2
