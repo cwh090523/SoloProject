@@ -1733,7 +1733,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -9.438, y: -1.9005284, z: -2.646}
-  m_LocalScale: {x: 1.4999999, y: 1.4999999, z: 1.4999999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3804165176407973922}
@@ -1906,10 +1906,19 @@ MonoBehaviour:
   agentAngularSpeed: 720
   destinationRefreshInterval: 0.1
   destinationMoveThreshold: 0.35
+  keepRootUpright: 1
   jumpStateName: Jump
   jumpDuration: 1.27
   jumpHeight: 1.2
   faceJumpDirection: 1
+  useDashToTarget: 0
+  dashStateName: Dodge_Combat_F
+  dashStartDistance: 7
+  dashStopDistance: 2.2
+  dashSpeedMultiplier: 2.5
+  dashDuration: 0.55
+  dashCooldown: 4
+  dashDestinationRefreshInterval: 0.08
   attackRange: 1.6
   attackDamage: 10
   attackCooldown: 1.25

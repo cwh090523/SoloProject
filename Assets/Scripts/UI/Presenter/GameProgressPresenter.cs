@@ -1,5 +1,6 @@
 ﻿using UI.ViewModel;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace UI.Presenter
@@ -17,6 +18,7 @@ namespace UI.Presenter
         private Label _enemyCountLabel;
         private Label _timerLabel;
         private Label _stateLabel;
+        private Button _skipRestockButton;
         private VisualElement _announcementRoot;
         private VisualElement _announcementCard;
         private Label _announcementTitleLabel;
@@ -37,10 +39,22 @@ namespace UI.Presenter
             Refresh();
         }
 
+        private void OnDisable()
+        {
+            if (_skipRestockButton != null)
+                _skipRestockButton.clicked -= HandleSkipRestock;
+        }
+
         private void Update()
         {
             Refresh();
             UpdateAnnouncement();
+
+            if (waveSpawner != null && waveSpawner.IsRestocking && Keyboard.current != null &&
+                Keyboard.current.nKey.wasPressedThisFrame)
+            {
+                waveSpawner.SkipRestock();
+            }
         }
 
         private void ResolveReferences()
@@ -64,6 +78,12 @@ namespace UI.Presenter
             _enemyCountLabel = document.rootVisualElement.Q<Label>("EnemyCountLabel");
             _timerLabel = document.rootVisualElement.Q<Label>("TimerLabel");
             _stateLabel = document.rootVisualElement.Q<Label>("StateLabel");
+            _skipRestockButton = document.rootVisualElement.Q<Button>("SkipRestockButton");
+            if (_skipRestockButton != null)
+            {
+                _skipRestockButton.clicked -= HandleSkipRestock;
+                _skipRestockButton.clicked += HandleSkipRestock;
+            }
             BindAnnouncementElements(document.rootVisualElement);
         }
 
@@ -101,7 +121,15 @@ namespace UI.Presenter
             if (_stateLabel != null)
                 _stateLabel.text = stateText;
 
+            if (_skipRestockButton != null)
+                _skipRestockButton.style.display = waveSpawner.IsRestocking ? DisplayStyle.Flex : DisplayStyle.None;
+
             RefreshAnnouncementState(currentWave, stateText);
+        }
+
+        private void HandleSkipRestock()
+        {
+            waveSpawner?.SkipRestock();
         }
 
         private static string FormatTime(float seconds)

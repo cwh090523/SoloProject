@@ -31,6 +31,7 @@ public class RangedEnemyBTAgent : MonoBehaviour
     [SerializeField] private float agentAcceleration = 35f;
     [SerializeField] private float moveDestinationStopDistance = 0.25f;
     [SerializeField] private bool ignoreDetectionRange = true;
+    [SerializeField] private bool keepRootUpright = true;
 
     [Header("Attack")]
     [SerializeField] private float damage = 12f;
@@ -120,6 +121,9 @@ public class RangedEnemyBTAgent : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (keepRootUpright)
+            transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
         ApplyVisualAimCorrection();
     }
 
@@ -147,6 +151,7 @@ public class RangedEnemyBTAgent : MonoBehaviour
             agent.stoppingDistance = moveDestinationStopDistance;
             agent.autoBraking = true;
             agent.updateRotation = false;
+            agent.updateUpAxis = false;
         }
 
         if (disableCollidersOnDeath && (collidersToDisableOnDeath == null || collidersToDisableOnDeath.Length == 0))

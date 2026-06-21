@@ -15,5 +15,6 @@
                 <ui:Label text="00:00" name="TimerLabel" style="color: rgb(255, 255, 255); font-size: 26px; -unity-font-style: bold; -unity-text-align: middle-right;"/>
             </ui:VisualElement>
         </ui:VisualElement>
+        <ui:Button text="NEXT WAVE NOW" name="SkipRestockButton" style="display: none; height: 36px; margin-top: 9px; color: rgb(250, 236, 205); font-size: 17px; -unity-font-style: bold; background-color: rgb(122, 39, 34); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(232, 190, 112, 0.36); border-right-color: rgba(0, 0, 0, 0.62); border-top-color: rgba(232, 190, 112, 0.36); border-bottom-color: rgba(0, 0, 0, 0.72); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;"/>
     </ui:VisualElement>
 </ui:UXML>

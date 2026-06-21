@@ -106436,7 +106436,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[0].fixedSpawns.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[1].fixedSpawns.Array.size
@@ -106444,7 +106444,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[2].fixedSpawns.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[4].fixedSpawns.Array.size
@@ -106555,6 +106555,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
+      propertyPath: waves.Array.data[2].fixedSpawns.Array.data[1].count
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[4].fixedSpawns.Array.data[0].count
       value: 1
       objectReference: {fileID: 0}
@@ -106569,7 +106573,7 @@ PrefabInstance:
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[0].fixedSpawns.Array.data[0].enemyPrefab
       value: 
-      objectReference: {fileID: 1571774486667411111, guid: 8142a74bd2ac52143a679a3df824f73f, type: 3}
+      objectReference: {fileID: 3670773231264124544, guid: 9bfb6c9b412b5f948accbfa55045058c, type: 3}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[0].fixedSpawns.Array.data[1].enemyPrefab
       value: 
@@ -106577,15 +106581,19 @@ PrefabInstance:
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[1].fixedSpawns.Array.data[0].enemyPrefab
       value: 
-      objectReference: {fileID: 3632297936653311901, guid: de34e61310f29434daa8dd853753f59a, type: 3}
+      objectReference: {fileID: 1571774486667411111, guid: 8142a74bd2ac52143a679a3df824f73f, type: 3}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[1].fixedSpawns.Array.data[1].enemyPrefab
       value: 
-      objectReference: {fileID: 3632297936653311901, guid: 352625857bffa304e8b44774861788dc, type: 3}
+      objectReference: {fileID: 1571774486667411111, guid: 11d9e1c6baad139469688988f9e82f34, type: 3}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[2].fixedSpawns.Array.data[0].enemyPrefab
       value: 
-      objectReference: {fileID: 3670773231264124544, guid: 9bfb6c9b412b5f948accbfa55045058c, type: 3}
+      objectReference: {fileID: 3632297936653311901, guid: de34e61310f29434daa8dd853753f59a, type: 3}
+    - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
+      propertyPath: waves.Array.data[2].fixedSpawns.Array.data[1].enemyPrefab
+      value: 
+      objectReference: {fileID: 3632297936653311901, guid: 352625857bffa304e8b44774861788dc, type: 3}
     - target: {fileID: 2370901728820721477, guid: 2cac657f54d35d24ab78a44db978e378, type: 3}
       propertyPath: waves.Array.data[4].fixedSpawns.Array.data[0].enemyPrefab
       value: 
@@ -117044,8 +117052,12 @@ PrefabInstance:
       value: 150
       objectReference: {fileID: 0}
     - target: {fileID: 3799432949263782896, guid: 93cd4d94cbc985b48a4569f5a4bbfb5c, type: 3}
+      propertyPath: damage
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3799432949263782896, guid: 93cd4d94cbc985b48a4569f5a4bbfb5c, type: 3}
       propertyPath: reserveAmmo
-      value: 300
+      value: 1000
       objectReference: {fileID: 0}
     - target: {fileID: 3799432949263782896, guid: 93cd4d94cbc985b48a4569f5a4bbfb5c, type: 3}
       propertyPath: magazineSize
@@ -117105,7 +117117,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7016011568074218122, guid: 93cd4d94cbc985b48a4569f5a4bbfb5c, type: 3}
       propertyPath: maxHealth
-      value: 100
+      value: 150
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1297863459684216041, guid: 93cd4d94cbc985b48a4569f5a4bbfb5c, type: 3}

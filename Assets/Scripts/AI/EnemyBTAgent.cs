@@ -58,6 +58,7 @@ public class EnemyBTAgent : MonoBehaviour
     [SerializeField] private float agentAngularSpeed = 720f;
     [SerializeField] private float destinationRefreshInterval = 0.15f;
     [SerializeField] private float destinationMoveThreshold = 0.35f;
+    [SerializeField] private bool keepRootUpright = true;
 
     [Header("Off Mesh Link Jump")] [SerializeField]
     private string jumpStateName = "Jump";
@@ -65,6 +66,17 @@ public class EnemyBTAgent : MonoBehaviour
     [SerializeField] private float jumpDuration = 0.65f;
     [SerializeField] private float jumpHeight = 1.2f;
     [SerializeField] private bool faceJumpDirection = true;
+
+    [Header("Dash Approach")] [SerializeField]
+    private bool useDashToTarget;
+
+    [SerializeField] private string dashStateName = "Dodge_Combat_F";
+    [SerializeField] private float dashStartDistance = 7f;
+    [SerializeField] private float dashStopDistance = 2.2f;
+    [SerializeField] private float dashSpeedMultiplier = 2.5f;
+    [SerializeField] private float dashDuration = 0.55f;
+    [SerializeField] private float dashCooldown = 4f;
+    [SerializeField] private float dashDestinationRefreshInterval = 0.08f;
 
     [Header("Attack")] [SerializeField] private float attackRange = 1.6f;
     [SerializeField] private float attackDamage = 10f;
@@ -102,16 +114,23 @@ public class EnemyBTAgent : MonoBehaviour
     private DamageHitReaction[] _hitReactions;
     private Coroutine _attackRoutine;
     private Coroutine _jumpRoutine;
+    private Coroutine _dashRoutine;
     private NavMeshPath _pathProbe;
     private Vector3 _lastDestination;
     private string _currentAnimationState;
+    private float _baseAgentSpeed;
+    private float _baseAttackDamage;
+    private float _baseAttackCooldown;
+    private float _baseAttackAnimationLockTime;
     private float _nextAttackTime;
+    private float _nextDashTime;
     private float _nextDestinationRefreshTime;
     private float _nextDebugLogTime;
     private bool _hasDestination;
     private bool _isAttacking;
     private bool _attackDamageApplied;
     private bool _isJumping;
+    private bool _isDashing;
     private bool _deathAnimationPlayed;
     private bool _wasMovementBlocked;
 
@@ -151,7 +170,7 @@ public class EnemyBTAgent : MonoBehaviour
         ResolveTarget();
         RefreshAnimationCacheAfterMovementBlock();
 
-        if (_isJumping)
+        if (_isJumping || _isDashing)
         {
             LogDebugState();
             return;
@@ -159,6 +178,12 @@ public class EnemyBTAgent : MonoBehaviour
 
         _root?.Tick();
         LogDebugState();
+    }
+
+    private void LateUpdate()
+    {
+        if (keepRootUpright)
+            transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
     }
 
     private void ResolveReferences()
@@ -174,6 +199,8 @@ public class EnemyBTAgent : MonoBehaviour
         if (statesTracker == null)
             statesTracker = FindFirstObjectByType<GameStateTracker>();
 
+        CacheBaseCombatValues();
+
         CacheDeathColliders();
 
         if (animator != null && disableAnimatorRootMotion)
@@ -188,6 +215,7 @@ public class EnemyBTAgent : MonoBehaviour
             agent.autoTraverseOffMeshLink = false;
             agent.autoBraking = true;
             agent.updateRotation = false;
+            agent.updateUpAxis = false;
         }
 
         _pathProbe ??= new NavMeshPath();
@@ -245,6 +273,11 @@ public class EnemyBTAgent : MonoBehaviour
             ),
             new BTSequence(
                 new BTCondition(HasTarget),
+                new BTCondition(CanStartDash),
+                new BTAction(DoDash)
+            ),
+            new BTSequence(
+                new BTCondition(HasTarget),
                 new BTCondition(CanAttackTarget),
                 new BTAction(DoAttack)
             ),
@@ -255,6 +288,14 @@ public class EnemyBTAgent : MonoBehaviour
             ),
             new BTAction(DoIdle)
         );
+    }
+
+    private void CacheBaseCombatValues()
+    {
+        _baseAgentSpeed = agentSpeed;
+        _baseAttackDamage = attackDamage;
+        _baseAttackCooldown = attackCooldown;
+        _baseAttackAnimationLockTime = attackAnimationLockTime;
     }
 
     private void ResolveTarget()
@@ -331,6 +372,21 @@ public class EnemyBTAgent : MonoBehaviour
         return !requireAttackLineOfSight || HasClearAttackLine();
     }
 
+    private bool CanStartDash()
+    {
+        if (!useDashToTarget || _dashRoutine != null || Time.time < _nextDashTime)
+            return false;
+
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh || IsDead() || IsMovementBlocked())
+            return false;
+
+        float horizontalDistance = Mathf.Sqrt(GetHorizontalSqrDistanceToTarget());
+        if (horizontalDistance < dashStartDistance || horizontalDistance <= attackRange)
+            return false;
+
+        return TryGetDestinationOnNavMesh(out _, out _);
+    }
+
     private bool IsTargetInAttackRange()
     {
         return GetSqrDistanceToTarget() <= attackRange * attackRange;
@@ -402,6 +458,14 @@ public class EnemyBTAgent : MonoBehaviour
         return BTStatus.Running;
     }
 
+    private BTStatus DoDash()
+    {
+        if (_dashRoutine == null)
+            _dashRoutine = StartCoroutine(DashRoutine());
+
+        return BTStatus.Running;
+    }
+
     private BTStatus DoAttack()
     {
         StopAgent();
@@ -442,6 +506,58 @@ public class EnemyBTAgent : MonoBehaviour
         _isAttacking = false;
         PlayIdle();
         _attackRoutine = null;
+    }
+
+    private IEnumerator DashRoutine()
+    {
+        _isDashing = true;
+        _hasDestination = false;
+        _nextDashTime = Time.time + Mathf.Max(0f, dashCooldown);
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = false;
+            agent.ResetPath();
+            agent.speed = agentSpeed * GetSpeedMultiplier() * Mathf.Max(1f, dashSpeedMultiplier);
+            agent.stoppingDistance = Mathf.Max(0.1f, dashStopDistance);
+        }
+
+        CrossFade(dashStateName);
+
+        float elapsed = 0f;
+        float nextRefreshTime = 0f;
+        float duration = Mathf.Max(0.05f, dashDuration);
+        while (elapsed < duration && !IsDead())
+        {
+            elapsed += Time.deltaTime;
+
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh || IsMovementBlocked())
+                break;
+
+            if (Time.time >= nextRefreshTime && TryGetDestinationOnNavMesh(out Vector3 destination, out _))
+            {
+                agent.SetDestination(destination);
+                nextRefreshTime = Time.time + Mathf.Max(0.02f, dashDestinationRefreshInterval);
+            }
+
+            FaceMoveDirection();
+
+            if (GetHorizontalSqrDistanceToTarget() <= dashStopDistance * dashStopDistance)
+                break;
+
+            yield return null;
+        }
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.speed = agentSpeed * GetSpeedMultiplier();
+            agent.stoppingDistance = stoppingDistance;
+            agent.velocity = Vector3.zero;
+        }
+
+        _isDashing = false;
+        _dashRoutine = null;
+        _currentAnimationState = string.Empty;
     }
 
     public void Attack()
@@ -701,6 +817,22 @@ public class EnemyBTAgent : MonoBehaviour
         _hasDestination = false;
     }
 
+    public void SetDashEnabled(bool isEnabled)
+    {
+        useDashToTarget = isEnabled;
+    }
+
+    public void SetCombatPhaseModifiers(float speedMultiplier, float damageMultiplier, float attackCooldownMultiplier)
+    {
+        agentSpeed = _baseAgentSpeed * Mathf.Max(0.1f, speedMultiplier);
+        attackDamage = _baseAttackDamage * Mathf.Max(0f, damageMultiplier);
+        attackCooldown = _baseAttackCooldown * Mathf.Max(0.05f, attackCooldownMultiplier);
+        attackAnimationLockTime = _baseAttackAnimationLockTime * Mathf.Max(0.05f, attackCooldownMultiplier);
+
+        if (agent != null)
+            agent.speed = agentSpeed * GetSpeedMultiplier();
+    }
+
     private string GetAttackStateName()
     {
         if (attackStateNames == null || attackStateNames.Length == 0)
@@ -837,6 +969,13 @@ public class EnemyBTAgent : MonoBehaviour
             StopCoroutine(_jumpRoutine);
             _jumpRoutine = null;
         }
+
+        if (_dashRoutine != null)
+        {
+            StopCoroutine(_dashRoutine);
+            _dashRoutine = null;
+        }
+
         if(statesTracker != null)
             statesTracker.AddKill();
 
@@ -845,6 +984,7 @@ public class EnemyBTAgent : MonoBehaviour
             hitReactions[i].CancelReaction();
 
         _isJumping = false;
+        _isDashing = false;
         _isAttacking = false;
         _attackDamageApplied = false;
         StopAgent();
@@ -857,6 +997,7 @@ public class EnemyBTAgent : MonoBehaviour
     {
         _deathAnimationPlayed = false;
         _isJumping = false;
+        _isDashing = false;
         _isAttacking = false;
         _attackDamageApplied = false;
         _currentAnimationState = string.Empty;

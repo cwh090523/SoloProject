@@ -25,6 +25,7 @@ public class EnemyHealthBarUI : MonoBehaviour
 
     private Canvas _canvas;
     private RectTransform _canvasRect;
+    private Image _fillImage;
     private RectTransform _fillRect;
 
     private void Awake()
@@ -88,11 +89,11 @@ public class EnemyHealthBarUI : MonoBehaviour
 
     private void Refresh(float currentHealth, float maxHealth)
     {
-        if (_canvas == null || _fillRect == null)
+        if (_canvas == null || _fillImage == null || _fillRect == null)
             return;
 
         float normalized = maxHealth <= 0f ? 0f : Mathf.Clamp01(currentHealth / maxHealth);
-        _fillRect.anchorMax = new Vector2(normalized, 1f);
+        _fillRect.localScale = new Vector3(normalized, 1f, 1f);
 
         bool shouldShow = currentHealth > 0f && (!hideWhenFullHealth || currentHealth < maxHealth);
         _canvas.gameObject.SetActive(shouldShow);
@@ -135,7 +136,11 @@ public class EnemyHealthBarUI : MonoBehaviour
         fillRoot.offsetMin = Vector2.zero;
         fillRoot.offsetMax = Vector2.zero;
 
-        _fillRect = CreateImage("Fill", fillRoot, fillColor, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        RectTransform fillRect = CreateImage("Fill", fillRoot, fillColor, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        _fillRect = fillRect;
+        _fillRect.pivot = new Vector2(1f, 0.5f);
+        _fillImage = fillRect.GetComponent<Image>();
+        _fillImage.type = Image.Type.Simple;
     }
 
     private static RectTransform CreateImage(
@@ -152,6 +157,7 @@ public class EnemyHealthBarUI : MonoBehaviour
 
         Image image = imageObject.AddComponent<Image>();
         image.color = color;
+        image.raycastTarget = false;
 
         RectTransform rectTransform = imageObject.GetComponent<RectTransform>();
         rectTransform.anchorMin = anchorMin;

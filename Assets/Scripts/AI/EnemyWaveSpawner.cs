@@ -72,10 +72,14 @@ public class EnemyWaveSpawner : MonoBehaviour
     public int RemainingEnemyCount => _aliveEnemies.Count + _remainingEnemiesToSpawn;
     public int TotalEnemyCount => _currentWaveTotalEnemies;
     public float NextWaveTime => _nextWaveTime;
+    public bool IsRestocking => _state == WaveState.Restock;
+    public IReadOnlyList<Health> AliveEnemies => _aliveEnemies;
     public bool IsStageClear => _state == WaveState.Clear;
     public event Action StageCleared;
     public event Action<float> RestockStarted;
     public event Action RestockEnded;
+    public event Action<Health> EnemyRegistered;
+    public event Action<Health> EnemyRemoved;
 
     public string StateText => _state switch
     {
@@ -91,6 +95,7 @@ public class EnemyWaveSpawner : MonoBehaviour
     private void Start()
     {
         ResolveRewardTarget();
+        EnsureMinimapEnemyIndicators();
 
         if (startOnAwake)
             StartWaves();
@@ -111,6 +116,12 @@ public class EnemyWaveSpawner : MonoBehaviour
             StopCoroutine(_waveRoutine);
             _waveRoutine = null;
         }
+    }
+
+    public void SkipRestock()
+    {
+        if (_state == WaveState.Restock)
+            _nextWaveTime = 0f;
     }
 
     private IEnumerator WaveRoutine()
@@ -303,10 +314,32 @@ public class EnemyWaveSpawner : MonoBehaviour
             return;
 
         EnsureBossHealthTarget(enemy, enemyHealth, prefab);
+        EnsureKnightBossPhaseController(enemy, enemyHealth, prefab);
         EnsureEnemyHealthBar(enemyHealth);
         enemyHealth.RestoreFullHealth();
         enemyHealth.Died += () => HandleEnemyDied(enemyHealth);
         _aliveEnemies.Add(enemyHealth);
+        EnemyRegistered?.Invoke(enemyHealth);
+    }
+
+    public void RegisterSummonedEnemy(GameObject enemy)
+    {
+        if (enemy == null)
+            return;
+
+        Health enemyHealth = enemy.GetComponent<Health>();
+        if (enemyHealth == null)
+            enemyHealth = enemy.GetComponentInChildren<Health>();
+
+        if (enemyHealth == null || _aliveEnemies.Contains(enemyHealth))
+            return;
+
+        EnsureEnemyHealthBar(enemyHealth);
+        enemyHealth.RestoreFullHealth();
+        enemyHealth.Died += () => HandleEnemyDied(enemyHealth);
+        _aliveEnemies.Add(enemyHealth);
+        _currentWaveTotalEnemies++;
+        EnemyRegistered?.Invoke(enemyHealth);
     }
 
     private void EnsureEnemyHealthBar(Health enemyHealth)
@@ -341,6 +374,24 @@ public class EnemyWaveSpawner : MonoBehaviour
         DisableRegularHealthBar(enemyHealth);
     }
 
+    private void EnsureKnightBossPhaseController(GameObject enemy, Health enemyHealth, GameObject sourcePrefab)
+    {
+        if (enemy == null || enemyHealth == null || !IsKnightBossEnemy(enemy, enemyHealth, sourcePrefab))
+            return;
+
+        KnightBossPhaseController phaseController = enemyHealth.GetComponent<KnightBossPhaseController>();
+        if (phaseController == null)
+            phaseController = enemyHealth.GetComponentInParent<KnightBossPhaseController>();
+        if (phaseController == null)
+            phaseController = enemyHealth.gameObject.AddComponent<KnightBossPhaseController>();
+
+        EnemyBTAgent btAgent = enemy.GetComponent<EnemyBTAgent>();
+        if (btAgent == null)
+            btAgent = enemy.GetComponentInChildren<EnemyBTAgent>();
+
+        phaseController.InitializeRuntime(enemyHealth, btAgent, this, enemyPrefab);
+    }
+
     private void DisableRegularHealthBar(Health enemyHealth)
     {
         EnemyHealthBarUI healthBar = enemyHealth.GetComponent<EnemyHealthBarUI>();
@@ -369,10 +420,24 @@ public class EnemyWaveSpawner : MonoBehaviour
                IsBossName(sourcePrefab == null ? null : sourcePrefab.name);
     }
 
+    private bool IsKnightBossEnemy(GameObject enemy, Health enemyHealth, GameObject sourcePrefab)
+    {
+        return IsBossEnemy(enemy, enemyHealth, sourcePrefab) &&
+               (IsKnightName(enemy == null ? null : enemy.name) ||
+                IsKnightName(enemyHealth == null ? null : enemyHealth.gameObject.name) ||
+                IsKnightName(sourcePrefab == null ? null : sourcePrefab.name));
+    }
+
     private bool IsBossName(string objectName)
     {
         return !string.IsNullOrWhiteSpace(objectName) &&
                objectName.IndexOf("Boss", StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private bool IsKnightName(string objectName)
+    {
+        return !string.IsNullOrWhiteSpace(objectName) &&
+               objectName.IndexOf("Knight", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private string GetBossDisplayName(GameObject enemy, GameObject sourcePrefab)
@@ -418,9 +483,19 @@ public class EnemyWaveSpawner : MonoBehaviour
     private void HandleEnemyDied(Health enemyHealth)
     {
         _aliveEnemies.Remove(enemyHealth);
+        EnemyRemoved?.Invoke(enemyHealth);
 
         if (playerWallet != null && killReward > 0)
             playerWallet.AddMoney(killReward);
+    }
+
+    private void EnsureMinimapEnemyIndicators()
+    {
+        MinimapEnemyIndicatorUI indicatorUI = FindFirstObjectByType<MinimapEnemyIndicatorUI>();
+        if (indicatorUI == null)
+            indicatorUI = gameObject.AddComponent<MinimapEnemyIndicatorUI>();
+
+        indicatorUI.Initialize(this);
     }
 
     private void ResolveRewardTarget()

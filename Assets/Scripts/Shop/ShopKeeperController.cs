@@ -38,13 +38,13 @@ namespace Shop
                 stateManager = FindFirstObjectByType<GameStateManager>();
 
             ResolvePlayer();
+            ConfigureAgent();
             StopMoving();
         }
 
         private void Update()
         {
             ResolvePlayer();
-            StopMoving();
             UpdateAnimation(false);
 
             if (!CanLookAtPlayer())
@@ -53,6 +53,25 @@ namespace Shop
             float distanceToPlayer = Vector3.Distance(transform.position, player.position);
             if (distanceToPlayer <= lookRange)
                 FacePlayer();
+        }
+
+        private void LateUpdate()
+        {
+            transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
+            if (agent != null && agent.enabled && agent.isOnNavMesh)
+                agent.nextPosition = transform.position;
+        }
+
+        private void ConfigureAgent()
+        {
+            if (agent == null)
+                return;
+
+            agent.updateRotation = false;
+            agent.updateUpAxis = false;
+            agent.updatePosition = false;
+            agent.isStopped = true;
         }
 
         private bool CanLookAtPlayer()
