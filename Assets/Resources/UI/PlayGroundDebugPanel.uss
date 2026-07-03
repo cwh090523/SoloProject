@@ -1,0 +1,127 @@
+.debug-root {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    padding-right: 32px;
+}
+
+.debug-panel {
+    width: 430px;
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-top: 20px;
+    padding-bottom: 22px;
+    background-color: rgba(6, 9, 12, 0.94);
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    border-left-color: rgba(255, 210, 88, 0.34);
+    border-right-color: rgba(0, 0, 0, 0.82);
+    border-top-color: rgba(255, 210, 88, 0.34);
+    border-bottom-color: rgba(0, 0, 0, 0.9);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.debug-header {
+    padding-bottom: 12px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
+.debug-kicker {
+    color: rgb(255, 211, 73);
+    font-size: 13px;
+    -unity-font-style: bold;
+}
+
+.debug-title {
+    margin-top: 2px;
+    color: rgb(255, 255, 255);
+    font-size: 30px;
+    -unity-font-style: bold;
+}
+
+.debug-hint {
+    margin-top: 4px;
+    color: rgba(218, 229, 235, 0.76);
+    font-size: 13px;
+    -unity-font-style: bold;
+}
+
+.debug-section {
+    margin-top: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    background-color: rgba(17, 27, 36, 0.78);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.1);
+    border-right-color: rgba(0, 0, 0, 0.55);
+    border-top-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: rgba(0, 0, 0, 0.62);
+}
+
+.debug-section-title {
+    margin-bottom: 8px;
+    color: rgb(255, 211, 73);
+    font-size: 16px;
+    -unity-font-style: bold;
+}
+
+.debug-toggle {
+    height: 32px;
+    margin-top: 4px;
+    background-color: rgb(66 66 66);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.debug-row {
+    height: 36px;
+    margin-top: 5px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.debug-row-label {
+    width: 170px;
+    color: rgb(224, 231, 232);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.debug-input {
+    width: 140px;
+    height: 30px;
+    color: rgb(255, 255, 255);
+    font-size: 15px;
+    -unity-font-style: bold;
+}
+
+.debug-input .unity-text-field__input {
+    color: rgb(255, 255, 255);
+    background-color: rgb(10, 14, 18);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 211, 73, 0.48);
+    border-right-color: rgba(255, 211, 73, 0.48);
+    border-top-color: rgba(255, 211, 73, 0.48);
+    border-bottom-color: rgba(255, 211, 73, 0.48);
+    -unity-text-align: middle-right;
+}

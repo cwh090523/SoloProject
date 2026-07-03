@@ -144,7 +144,8 @@ public class FirstPersonWeaponView : MonoBehaviour
         float targetAimWeight = weapon != null && weapon.IsAiming ? 1f : 0f;
         _aimWeight = Mathf.MoveTowards(_aimWeight, targetAimWeight, aimSmoothSpeed * Time.deltaTime);
 
-        float targetFov = Mathf.Lerp(hipFov, aimFov, _aimWeight);
+        float equippedAimFov = weapon != null ? weapon.AimFov : aimFov;
+        float targetFov = Mathf.Lerp(hipFov, equippedAimFov, _aimWeight);
         viewCamera.fieldOfView = Mathf.Lerp(viewCamera.fieldOfView, targetFov, aimSmoothSpeed * Time.deltaTime);
     }
 

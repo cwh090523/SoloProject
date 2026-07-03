@@ -23,6 +23,7 @@ namespace UI.Presenter
         private Button _resumeButton;
         private Button _titleButton;
         private Slider _mouseSensitivitySlider;
+        private Slider _aimSensitivitySlider;
         private Slider _masterVolumeSlider;
         private Slider _bgmVolumeSlider;
         private Slider _sfxVolumeSlider;
@@ -32,6 +33,7 @@ namespace UI.Presenter
         private VisualElement _mouseSensitivityValueContainer;
         private Label _mouseSensitivityValueLabel;
         private TextField _mouseSensitivityInput;
+        private Label _aimSensitivityValueLabel;
         private Label _masterVolumeValueLabel;
         private Label _bgmVolumeValueLabel;
         private Label _sfxVolumeValueLabel;
@@ -147,6 +149,7 @@ namespace UI.Presenter
             _resumeButton = root.Q<Button>("ResumeButton");
             _titleButton = root.Q<Button>("TitleButton");
             _mouseSensitivitySlider = root.Q<Slider>("MouseSensitivitySlider");
+            _aimSensitivitySlider = root.Q<Slider>("AimSensitivitySlider");
             _masterVolumeSlider = root.Q<Slider>("MasterVolumeSlider");
             _bgmVolumeSlider = root.Q<Slider>("BgmVolumeSlider");
             _sfxVolumeSlider = root.Q<Slider>("SfxVolumeSlider");
@@ -156,6 +159,7 @@ namespace UI.Presenter
             _mouseSensitivityValueContainer = root.Q<VisualElement>("MouseSensitivityValueContainer");
             _mouseSensitivityValueLabel = root.Q<Label>("MouseSensitivityValueLabel");
             _mouseSensitivityInput = root.Q<TextField>("MouseSensitivityInput");
+            _aimSensitivityValueLabel = root.Q<Label>("AimSensitivityValueLabel");
             _masterVolumeValueLabel = root.Q<Label>("MasterVolumeValueLabel");
             _bgmVolumeValueLabel = root.Q<Label>("BgmVolumeValueLabel");
             _sfxVolumeValueLabel = root.Q<Label>("SfxVolumeValueLabel");
@@ -183,6 +187,7 @@ namespace UI.Presenter
             _mouseSensitivityInput?.RegisterValueChangedCallback(HandleMouseSensitivityInputChanged);
             _mouseSensitivityInput?.RegisterCallback<KeyDownEvent>(HandleMouseSensitivityInputKeyDown);
             _mouseSensitivityInput?.RegisterCallback<FocusOutEvent>(HandleMouseSensitivityInputFocusOut);
+            _aimSensitivitySlider?.RegisterValueChangedCallback(HandleAimSensitivityChanged);
             _masterVolumeSlider?.RegisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.RegisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.RegisterValueChangedCallback(HandleSfxVolumeChanged);
@@ -198,6 +203,7 @@ namespace UI.Presenter
             _mouseSensitivityInput?.UnregisterValueChangedCallback(HandleMouseSensitivityInputChanged);
             _mouseSensitivityInput?.UnregisterCallback<KeyDownEvent>(HandleMouseSensitivityInputKeyDown);
             _mouseSensitivityInput?.UnregisterCallback<FocusOutEvent>(HandleMouseSensitivityInputFocusOut);
+            _aimSensitivitySlider?.UnregisterValueChangedCallback(HandleAimSensitivityChanged);
             _masterVolumeSlider?.UnregisterValueChangedCallback(HandleMasterVolumeChanged);
             _bgmVolumeSlider?.UnregisterValueChangedCallback(HandleBgmVolumeChanged);
             _sfxVolumeSlider?.UnregisterValueChangedCallback(HandleSfxVolumeChanged);
@@ -292,6 +298,7 @@ namespace UI.Presenter
             GameSettings.ApplyAudio();
 
             SetSliderValue(_mouseSensitivitySlider, GameSettings.MouseSensitivity);
+            SetSliderValue(_aimSensitivitySlider, GameSettings.AimSensitivityMultiplier);
             SetSliderValue(_masterVolumeSlider, GameSettings.MasterVolume);
             SetSliderValue(_bgmVolumeSlider, GameSettings.BgmVolume);
             SetSliderValue(_sfxVolumeSlider, GameSettings.SfxVolume);
@@ -360,6 +367,13 @@ namespace UI.Presenter
             evt.StopPropagation();
         }
 
+        private void HandleAimSensitivityChanged(ChangeEvent<float> evt)
+        {
+            GameSettings.AimSensitivityMultiplier = evt.newValue;
+            GameSettings.Save();
+            RefreshSettingLabels();
+        }
+
         private void HandleMasterVolumeChanged(ChangeEvent<float> evt)
         {
             GameSettings.MasterVolume = evt.newValue;
@@ -419,6 +433,9 @@ namespace UI.Presenter
 
             if (_mouseSensitivityInput != null)
                 _mouseSensitivityInput.SetValueWithoutNotify(mouseSensitivityText);
+
+            if (_aimSensitivityValueLabel != null)
+                _aimSensitivityValueLabel.text = FormatPercent(GameSettings.AimSensitivityMultiplier);
 
             if (_masterVolumeValueLabel != null)
                 _masterVolumeValueLabel.text = FormatPercent(GameSettings.MasterVolume);

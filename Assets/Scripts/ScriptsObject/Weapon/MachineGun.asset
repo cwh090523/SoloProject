@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd0b58b92364dd784c8db08baef124c, type: 3}
+  m_Name: MachineGun
+  m_EditorClassIdentifier: Assembly-CSharp::ScriptableObjectScripts.WeaponDataSO
+  weaponName: MachineGun
+  weaponPrefab: {fileID: 930765282753740159, guid: 0c430c457d44a314ba5d69d82713b499, type: 3}
+  icon: {fileID: -1391802321, guid: e2f1464d0e69f0441b0712d54cb327ad, type: 3}
+  fireSoundInterval: 0.06
+  damage: 7
+  range: 150
+  fireRate: 30
+  automatic: 1
+  autoFireHoldDelay: 0.1
+  magazineSize: 200
+  startingReserveAmmo: 1000
+  reloadTime: 2
+  spreadPerShot: 0.25
+  maxSpread: 5
+  spreadRecoverySpeed: 1.2
+  spreadAnglePerPoint: 1.15
+  aimSpreadMultiplier: 0.02
+  aimSpreadIncreasePerShot: 0
+  aimSpreadRecoverySpeed: 8
+  verticalRecoil: 0.8
+  horizontalRecoil: 0.6
+  aimFov: 42
+  useScopeOverlay: 0
+  scopeOverlaySprite: {fileID: 0}
+  secondaryActionType: 1
+  secondaryHoldStateName: 
+  secondaryReleaseStateName: 
+  secondaryAnimationDuration: 0.2
+  secondaryMeleeDamage: 35
+  secondaryMeleeRange: 2
+  secondaryMeleeRadius: 0.35
+  secondaryMeleeHitInterval: 0.35
+  equipStateName: DRAW
+  equipAnimationDuration: 0.35
+  fireStateName: FIRE_LEFT
+  fireStateNames:
+  - FIRE_LEFT
+  - FIRE_RIGHT
+  aimFireStateName: ' '
+  reloadStateName: IDLE
+  fireAnimationDuration: 0.12
+  fireClip: {fileID: 8300000, guid: 5261033e6a2292f4b89292dd50e4921c, type: 3}
+  reloadClip: {fileID: 0}
+  dropMagazineClip: {fileID: 8300000, guid: 17fde9cb7c6119d4588f643b86b9d4f0, type: 3}
+  inputMagazineClip: {fileID: 8300000, guid: 4827b95aca172d4499214c223165054a, type: 3}
+  lockMagazineClip: {fileID: 8300000, guid: 94e4152c980c05347bfbf96ff57d39d0, type: 3}
+  shellPrefab: {fileID: 7103081623043950048, guid: 418933a674648464dac052f0fc776194, type: 3}

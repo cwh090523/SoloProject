@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &1494822794555329608
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.002
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.19600004
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      propertyPath: m_Name
+      value: Arms_Glock_G48
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4538663439248543276}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5929073601942646874}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6670705278164641072}
+  m_SourcePrefab: {fileID: 100100000, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+--- !u!1 &1765345875714748697 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: ff0e1235a07a2d14c8a5299c1d10a27a, type: 3}
+  m_PrefabInstance: {fileID: 1494822794555329608}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &4538663439248543276
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765345875714748697}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 343301d88fdb4774ead0200113e07126, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &5929073601942646874
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765345875714748697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b3ab4f8ec4c4f7f9fb1f7c9a6c5d8f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimation
+  animator: {fileID: 4538663439248543276}
+  dampTime: 0.1
+  idleStateName: IDLE
+  walkStateName: WALK
+  runStateName: RUN
+  jumpStateName: JUMP
+  aimStateName: AIMMING
+  keepAimStateWhileAiming: 1
+  crossFadeDuration: 0.12
+--- !u!114 &6670705278164641072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1765345875714748697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fc3cb288fa14e1db3ee5bb8df3d0f0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponAnimationEvents
+  weapon: {fileID: 0}

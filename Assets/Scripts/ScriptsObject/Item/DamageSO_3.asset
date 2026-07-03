@@ -20,3 +20,4 @@ MonoBehaviour:
   uniquePurchase: 1
   uniqueId: 
   weaponPrefab: {fileID: 0}
+  weaponData: {fileID: 0}

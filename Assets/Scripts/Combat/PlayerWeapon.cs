@@ -11,6 +11,9 @@ public class PlayerWeapon : MonoBehaviour
     [Header("Input")]
     [SerializeField] private PlayerInput playerInput;
 
+    [Header("Audio")]
+    [SerializeField] private float fireSoundInterval = 0.4f;
+
     [Header("References")]
     [SerializeField] private Camera aimCamera;
     [SerializeField] private PlayerCamera playerCamera;
@@ -20,10 +23,12 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
 
     [Header("Weapon")]
+    [SerializeField] private WeaponDataSO weaponData;
     [SerializeField] private float damage = 25f;
     [SerializeField] private float range = 100f;
     [SerializeField] private float fireRate = 9f;
     [SerializeField] private float autoFireHoldDelay = 0.3f;
+    [SerializeField] private bool automatic = true;
     [SerializeField] private LayerMask hitLayers = ~0;
 
     [Header("Accuracy")]
@@ -44,9 +49,18 @@ public class PlayerWeapon : MonoBehaviour
     [SerializeField] private float recoilVertical = 1.4f;
     [SerializeField] private float recoilHorizontal = 0.35f;
     [SerializeField] private string fireStateName = "FIRE";
+    [SerializeField] private string[] fireStateNames;
     [SerializeField] private string aimFireStateName = "AIMMING_FIRE";
     [SerializeField] private string reloadStateName = "RELOAD";
     [SerializeField] private float fireAnimationDuration = 0.12f;
+    [SerializeField] private WeaponSecondaryActionType secondaryActionType = WeaponSecondaryActionType.Aim;
+    [SerializeField] private string secondaryHoldStateName = "";
+    [SerializeField] private string secondaryReleaseStateName = "";
+    [SerializeField] private float secondaryAnimationDuration = 0.2f;
+    [SerializeField] private float secondaryMeleeDamage = 35f;
+    [SerializeField] private float secondaryMeleeRange = 2f;
+    [SerializeField] private float secondaryMeleeRadius = 0.35f;
+    [SerializeField] private float secondaryMeleeHitInterval = 0.35f;
     [SerializeField] private bool drawDebugRay = true;
     // [SerializeField] private Light muzzleFlashLight;
     [SerializeField] private ParticleSystem[] muzzleParticles;
@@ -83,6 +97,16 @@ public class PlayerWeapon : MonoBehaviour
     private float _attackHeldTime;
     private bool _isAiming;
     private bool _reloadCompletedByEvent;
+    private float _damageBonus;
+    private Coroutine _reloadRoutine;
+    private float _weaponSwitchLockedUntil;
+    private float _nextFireSoundTime;
+    private WeaponInstance _equippedWeaponInstance;
+    private Renderer[] _equippedWeaponRenderers;
+    private Animator[] _linkedWeaponAnimators;
+    private int _fireStateIndex;
+    private bool _isSecondaryHeld;
+    private float _nextSecondaryMeleeHitTime;
 
     public event Action Fired;
     public event Action ReloadStarted;
@@ -93,18 +117,30 @@ public class PlayerWeapon : MonoBehaviour
     public int CurrentAmmo => _currentAmmo;
     public int MagazineSize => magazineSize;
     public int ReserveAmmo => reserveAmmo;
+    public float FireRate => fireRate;
     public bool IsReloading => _isReloading;
     public bool IsAiming => _isAiming;
+    public bool IsSecondaryHeld => _isSecondaryHeld;
     public float CurrentSpread => _currentSpread;
     public float MaxSpread => maxSpread;
     public float SpreadRatio => maxSpread <= 0f ? 0f : Mathf.Clamp01(GetEffectiveSpread() / maxSpread);
     public float Damage => damage;
+    public float AimFov => weaponData != null ? weaponData.aimFov : 42f;
+    public bool UsesScopeOverlay => weaponData != null && weaponData.useScopeOverlay;
+    public Sprite ScopeOverlaySprite => weaponData != null ? weaponData.scopeOverlaySprite : null;
+    public WeaponDataSO CurrentWeaponData => weaponData;
+    public bool PenetrationAssistEnabled { get; set; }
 
     private void Awake()
     {
-        _currentAmmo = magazineSize;
         ResolveReferences();
+
+        if (weaponData != null)
+            ApplyWeaponSettings(weaponData);
+
+        _currentAmmo = magazineSize;
         PrewarmShellPool();
+        EnsureWeaponInventory();
         // EnsureFeedbackObjects();
         AmmoChanged?.Invoke();
     }
@@ -126,8 +162,12 @@ public class PlayerWeapon : MonoBehaviour
             playerInput.OnAimKeyPressed -= HandleAim;
         }
 
+        SetSecondaryMeleeHeld(false);
+
         if (playerAnimation != null)
             playerAnimation.SetAiming(false);
+
+        SetEquippedWeaponRenderersVisible(true);
     }
 
     private void Update()
@@ -143,6 +183,12 @@ public class PlayerWeapon : MonoBehaviour
 
     private void UpdateAutoFire()
     {
+        if (!automatic)
+        {
+            _attackHeldTime = 0f;
+            return;
+        }
+
         if (Mouse.current == null || !Mouse.current.leftButton.isPressed)
         {
             _attackHeldTime = 0f;
@@ -158,7 +204,7 @@ public class PlayerWeapon : MonoBehaviour
 
     private void TryFire()
     {
-        if (_isReloading || Time.time < _nextFireTime)
+        if (_isReloading || _isSecondaryHeld || Time.time < _nextFireTime || Time.time < _weaponSwitchLockedUntil)
             return;
 
         if (_currentAmmo <= 0)
@@ -167,7 +213,7 @@ public class PlayerWeapon : MonoBehaviour
             return;
         }
 
-        _nextFireTime = Time.time + 1f / fireRate;
+        _nextFireTime = Time.time + 1f / Mathf.Max(0.01f, fireRate);
         _currentAmmo--;
         AmmoChanged?.Invoke();
         IncreaseSpread();
@@ -181,7 +227,24 @@ public class PlayerWeapon : MonoBehaviour
 
     private string GetFireStateName()
     {
-        return _isAiming && !string.IsNullOrWhiteSpace(aimFireStateName) ? aimFireStateName : fireStateName;
+        if (CanAim() && _isAiming && !string.IsNullOrWhiteSpace(aimFireStateName))
+            return aimFireStateName;
+
+        if (fireStateNames != null && fireStateNames.Length > 0)
+        {
+            for (int i = 0; i < fireStateNames.Length; i++)
+            {
+                int index = (_fireStateIndex + i) % fireStateNames.Length;
+                string stateName = fireStateNames[index];
+                if (string.IsNullOrWhiteSpace(stateName))
+                    continue;
+
+                _fireStateIndex = (index + 1) % fireStateNames.Length;
+                return stateName;
+            }
+        }
+
+        return fireStateName;
     }
 
     private void FireRaycast()
@@ -194,6 +257,9 @@ public class PlayerWeapon : MonoBehaviour
         if (drawDebugRay)
             Debug.DrawRay(ray.origin, ray.direction * range, Color.red, 0.25f);
 
+        if (PenetrationAssistEnabled && TryFirePenetrationAssist(ray))
+            return;
+
         if (!Physics.Raycast(ray, out RaycastHit hit, range, hitLayers, QueryTriggerInteraction.Ignore))
             return;
 
@@ -204,11 +270,11 @@ public class PlayerWeapon : MonoBehaviour
 
         bool canTakeDamage = damageable != null;
         SpawnHitEffect(hit.point, hit.normal, isHeadshot, !canTakeDamage);
-        HitConfirmed?.Invoke();
 
         if (!canTakeDamage || (targetHealth != null && targetHealth.IsDead))
             return;
 
+        HitConfirmed?.Invoke();
         damageable.TakeDamage(finalDamage);
 
         if (targetHealth == null || !targetHealth.IsDead)
@@ -220,12 +286,50 @@ public class PlayerWeapon : MonoBehaviour
             Debug.Log($"Headshot! Damage: {finalDamage}");
     }
 
+    private bool TryFirePenetrationAssist(Ray ray)
+    {
+        RaycastHit[] hits = Physics.RaycastAll(ray, range, hitLayers, QueryTriggerInteraction.Ignore);
+        if (hits == null || hits.Length == 0)
+            return false;
+
+        Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+            IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+            Health targetHealth = hit.collider.GetComponentInParent<Health>();
+
+            if (damageable == null || (targetHealth != null && targetHealth.IsDead))
+                continue;
+
+            bool isHeadshot;
+            float finalDamage = GetFinalDamage(hit, out isHeadshot);
+
+            SpawnHitEffect(hit.point, hit.normal, isHeadshot, false);
+            HitConfirmed?.Invoke();
+            damageable.TakeDamage(finalDamage);
+
+            if (targetHealth == null || !targetHealth.IsDead)
+                PlayDamageHitReaction(hit, isHeadshot);
+
+            DamageTextSpawner.ShowDamage(hit.point, hit.normal, finalDamage, aimCamera, hit.distance, range);
+
+            if (isHeadshot)
+                Debug.Log($"Headshot! Damage: {finalDamage}");
+
+            return true;
+        }
+
+        return false;
+    }
+
     private void TryReload()
     {
-        if (_isReloading || _currentAmmo >= magazineSize || reserveAmmo <= 0)
+        if (_isReloading || _isSecondaryHeld || _currentAmmo >= magazineSize || reserveAmmo <= 0)
             return;
 
-        StartCoroutine(ReloadRoutine());
+        _reloadRoutine = StartCoroutine(ReloadRoutine());
     }
 
     public void DropMag()
@@ -241,6 +345,18 @@ public class PlayerWeapon : MonoBehaviour
     public void LockMag()
     {
         PlayOneShot(lockMagazineClip);
+    }
+
+    public void SecondaryMeleeHit()
+    {
+        if (secondaryActionType != WeaponSecondaryActionType.MeleeHold)
+            return;
+
+        if (Time.time < _nextSecondaryMeleeHitTime)
+            return;
+
+        _nextSecondaryMeleeHitTime = Time.time + Mathf.Max(0f, secondaryMeleeHitInterval);
+        TrySecondaryMeleeHit();
     }
 
     public void Reload()
@@ -277,7 +393,20 @@ public class PlayerWeapon : MonoBehaviour
         if (amount <= 0f)
             return;
 
+        _damageBonus += amount;
         damage += amount;
+    }
+
+    public void SetDebugDamage(float newDamage)
+    {
+        damage = Mathf.Max(0f, newDamage);
+        _damageBonus = weaponData != null ? damage - weaponData.damage : 0f;
+    }
+
+    public void SetDebugFireRate(float newFireRate)
+    {
+        fireRate = Mathf.Max(0.01f, newFireRate);
+        _nextFireTime = 0f;
     }
 
     private float GetFinalDamage(RaycastHit hit, out bool isHeadshot)
@@ -339,8 +468,175 @@ public class PlayerWeapon : MonoBehaviour
             Reload();
 
         _isReloading = false;
+        _reloadRoutine = null;
 
         ReloadFinished?.Invoke();
+    }
+
+    public void EquipWeapon(WeaponDataSO data, WeaponInstance instance, WeaponRuntimeState runtimeState)
+    {
+        EquipWeapon(data, instance, runtimeState, runtimeState != null ? runtimeState.ReserveAmmo : data != null ? data.startingReserveAmmo : 0);
+    }
+
+    public void EquipWeapon(WeaponDataSO data, WeaponInstance instance, WeaponRuntimeState runtimeState, int sharedReserveAmmo)
+    {
+        if (data == null || instance == null)
+            return;
+
+        CancelReload();
+        weaponData = data;
+        ApplyWeaponSettings(data);
+        ApplyWeaponInstance(instance);
+
+        _currentAmmo = runtimeState != null
+            ? Mathf.Clamp(runtimeState.CurrentAmmo, 0, magazineSize)
+            : magazineSize;
+        reserveAmmo = Mathf.Max(0, sharedReserveAmmo);
+        _currentSpread = runtimeState != null ? Mathf.Clamp(runtimeState.CurrentSpread, 0f, maxSpread) : 0f;
+        _nextFireTime = 0f;
+        _attackHeldTime = 0f;
+        _fireStateIndex = 0;
+        SetSecondaryMeleeHeld(false);
+
+        BindAnimationEventReceivers(instance);
+        PlayEquipAnimation(data);
+        UpdateScopedWeaponVisibility();
+        AmmoChanged?.Invoke();
+    }
+
+    public void SaveRuntimeState(WeaponRuntimeState runtimeState)
+    {
+        if (runtimeState == null)
+            return;
+
+        runtimeState.CurrentAmmo = _currentAmmo;
+        runtimeState.ReserveAmmo = reserveAmmo;
+        runtimeState.CurrentSpread = _currentSpread;
+    }
+
+    private void ApplyWeaponSettings(WeaponDataSO data)
+    {
+        damage = Mathf.Max(0f, data.damage + _damageBonus);
+        range = Mathf.Max(0.1f, data.range);
+        fireRate = Mathf.Max(0.01f, data.fireRate);
+        automatic = data.automatic;
+        fireSoundInterval = Mathf.Max(0f, data.fireSoundInterval);
+        autoFireHoldDelay = Mathf.Max(0f, data.autoFireHoldDelay);
+
+        magazineSize = Mathf.Max(1, data.magazineSize);
+        reloadTime = Mathf.Max(0.01f, data.reloadTime);
+
+        spreadIncreasePerShot = Mathf.Max(0f, data.spreadPerShot);
+        maxSpread = Mathf.Max(0f, data.maxSpread);
+        spreadRecoverySpeed = Mathf.Max(0f, data.spreadRecoverySpeed);
+        spreadAnglePerPoint = Mathf.Max(0f, data.spreadAnglePerPoint);
+        aimSpreadMultiplier = Mathf.Max(0f, data.aimSpreadMultiplier);
+        aimSpreadIncreasePerShot = Mathf.Max(0f, data.aimSpreadIncreasePerShot);
+        aimSpreadRecoverySpeed = Mathf.Max(0f, data.aimSpreadRecoverySpeed);
+
+        recoilVertical = data.verticalRecoil;
+        recoilHorizontal = Mathf.Max(0f, data.horizontalRecoil);
+        fireStateName = data.fireStateName;
+        fireStateNames = data.fireStateNames;
+        aimFireStateName = data.aimFireStateName;
+        reloadStateName = data.reloadStateName;
+        fireAnimationDuration = Mathf.Max(0f, data.fireAnimationDuration);
+        secondaryActionType = data.secondaryActionType;
+        secondaryHoldStateName = data.secondaryHoldStateName;
+        secondaryReleaseStateName = data.secondaryReleaseStateName;
+        secondaryAnimationDuration = Mathf.Max(0f, data.secondaryAnimationDuration);
+        secondaryMeleeDamage = Mathf.Max(0f, data.secondaryMeleeDamage);
+        secondaryMeleeRange = Mathf.Max(0.01f, data.secondaryMeleeRange);
+        secondaryMeleeRadius = Mathf.Max(0.01f, data.secondaryMeleeRadius);
+        secondaryMeleeHitInterval = Mathf.Max(0f, data.secondaryMeleeHitInterval);
+
+        fireClip = data.fireClip;
+        dropMagazineClip = data.dropMagazineClip;
+        inputMagazineClip = data.inputMagazineClip;
+        lockMagazineClip = data.lockMagazineClip;
+
+        if (shellPrefab != data.shellPrefab)
+        {
+            shellPrefab = data.shellPrefab;
+            ResetShellPool();
+            PrewarmShellPool();
+        }
+    }
+
+    private void PlayEquipAnimation(WeaponDataSO data)
+    {
+        if (data == null || string.IsNullOrWhiteSpace(data.equipStateName))
+        {
+            _weaponSwitchLockedUntil = 0f;
+            return;
+        }
+
+        float duration = Mathf.Max(0f, data.equipAnimationDuration);
+        _weaponSwitchLockedUntil = Time.time + duration;
+        PlayAction(data.equipStateName, duration);
+    }
+
+    private void ApplyWeaponInstance(WeaponInstance instance)
+    {
+        SetEquippedWeaponRenderersVisible(true);
+
+        instance.ResolveReferences();
+        _equippedWeaponInstance = instance;
+        _equippedWeaponRenderers = instance.GetComponentsInChildren<Renderer>(true);
+        _linkedWeaponAnimators = instance.LinkedAnimators;
+
+        animator = instance.Animator;
+        playerAnimation = instance.PlayerAnimation;
+        muzzlePoint = instance.MuzzlePoint != null ? instance.MuzzlePoint : aimCamera != null ? aimCamera.transform : transform;
+        shellEjectPoint = instance.ShellEjectPoint;
+        muzzleParticles = instance.MuzzleParticles;
+
+        if (instance.AudioSource != null)
+            audioSource = instance.AudioSource;
+
+        if (instance.ShellPrefab != null && shellPrefab != instance.ShellPrefab)
+        {
+            shellPrefab = instance.ShellPrefab;
+            ResetShellPool();
+            PrewarmShellPool();
+        }
+    }
+
+    private void BindAnimationEventReceivers(WeaponInstance instance)
+    {
+        PlayerWeaponAnimationEvents[] receivers = instance.GetComponentsInChildren<PlayerWeaponAnimationEvents>(true);
+        for (int i = 0; i < receivers.Length; i++)
+            receivers[i].Bind(this);
+    }
+
+    private void EnsureWeaponInventory()
+    {
+        if (weaponData == null || animator == null)
+            return;
+
+        PlayerWeaponInventory inventory = GetComponent<PlayerWeaponInventory>();
+        if (inventory == null)
+            inventory = gameObject.AddComponent<PlayerWeaponInventory>();
+
+        inventory.InitializeLegacyWeapon(weaponData, animator.gameObject);
+    }
+
+    private void CancelReload()
+    {
+        if (_reloadRoutine != null)
+        {
+            StopCoroutine(_reloadRoutine);
+            _reloadRoutine = null;
+        }
+
+        bool wasReloading = _isReloading;
+        _isReloading = false;
+        _reloadCompletedByEvent = false;
+        SetSecondaryMeleeHeld(false);
+        SetAiming(false);
+
+        if (wasReloading)
+            ReloadFinished?.Invoke();
     }
 
     private void ResolveReferences()
@@ -403,24 +699,126 @@ public class PlayerWeapon : MonoBehaviour
 
     private void HandleAim(bool isPressed)
     {
+        if (secondaryActionType == WeaponSecondaryActionType.MeleeHold)
+        {
+            SetAiming(false);
+            SetSecondaryMeleeHeld(isPressed);
+            return;
+        }
+
+        if (secondaryActionType == WeaponSecondaryActionType.None)
+        {
+            SetAiming(false);
+            SetSecondaryMeleeHeld(false);
+            return;
+        }
+
         if (isPressed && _isReloading)
         {
             SetAiming(false);
             return;
         }
 
+        SetSecondaryMeleeHeld(false);
         SetAiming(isPressed);
 
         if (_isAiming)
             _currentSpread = Mathf.Min(_currentSpread, maxSpread * aimSpreadMultiplier);
     }
 
+    private bool CanAim()
+    {
+        return secondaryActionType == WeaponSecondaryActionType.Aim && !_isReloading;
+    }
+
     private void SetAiming(bool isAiming)
     {
-        _isAiming = isAiming && !_isReloading;
+        _isAiming = isAiming && CanAim();
 
         if (playerAnimation != null)
             playerAnimation.SetAiming(_isAiming);
+
+        UpdateScopedWeaponVisibility();
+    }
+
+    private void SetSecondaryMeleeHeld(bool isHeld)
+    {
+        bool canHold = isHeld &&
+                       secondaryActionType == WeaponSecondaryActionType.MeleeHold &&
+                       !_isReloading &&
+                       Time.time >= _weaponSwitchLockedUntil;
+
+        if (_isSecondaryHeld == canHold)
+            return;
+
+        _isSecondaryHeld = canHold;
+
+        if (_isSecondaryHeld)
+        {
+            SetAiming(false);
+            PlayAction(secondaryHoldStateName, float.PositiveInfinity);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(secondaryReleaseStateName))
+        {
+            PlayAction(secondaryReleaseStateName, secondaryAnimationDuration);
+            return;
+        }
+
+        if (playerAnimation != null)
+            playerAnimation.ClearActionLock();
+    }
+
+    private void TrySecondaryMeleeHit()
+    {
+        if (aimCamera == null)
+            return;
+
+        Ray ray = aimCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        if (drawDebugRay)
+            Debug.DrawRay(ray.origin, ray.direction * secondaryMeleeRange, Color.yellow, 0.2f);
+
+        if (!Physics.SphereCast(ray, secondaryMeleeRadius, out RaycastHit hit, secondaryMeleeRange, hitLayers, QueryTriggerInteraction.Ignore))
+            return;
+
+        IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+        Health targetHealth = hit.collider.GetComponentInParent<Health>();
+        bool canTakeDamage = damageable != null && (targetHealth == null || !targetHealth.IsDead);
+
+        SpawnHitEffect(hit.point, hit.normal, false, !canTakeDamage);
+
+        if (!canTakeDamage)
+            return;
+
+        HitConfirmed?.Invoke();
+        damageable.TakeDamage(secondaryMeleeDamage);
+
+        if (targetHealth == null || !targetHealth.IsDead)
+            PlayDamageHitReaction(hit, false);
+
+        DamageTextSpawner.ShowDamage(hit.point, hit.normal, secondaryMeleeDamage, aimCamera, hit.distance, secondaryMeleeRange);
+    }
+
+    private void UpdateScopedWeaponVisibility()
+    {
+        bool shouldHideWeaponModel = _isAiming && UsesScopeOverlay;
+        SetEquippedWeaponRenderersVisible(!shouldHideWeaponModel);
+    }
+
+    private void SetEquippedWeaponRenderersVisible(bool isVisible)
+    {
+        if (_equippedWeaponRenderers == null)
+            return;
+
+        for (int i = 0; i < _equippedWeaponRenderers.Length; i++)
+        {
+            Renderer weaponRenderer = _equippedWeaponRenderers[i];
+            if (weaponRenderer == null)
+                continue;
+
+            weaponRenderer.enabled = isVisible;
+        }
     }
 
     private float GetEffectiveSpread()
@@ -466,7 +864,7 @@ public class PlayerWeapon : MonoBehaviour
 
     private void PlayFireFeedback()
     {
-        PlayOneShot(fireClip);
+        PlayFireSound();
 
         PlayMuzzleParticles();
 
@@ -475,6 +873,15 @@ public class PlayerWeapon : MonoBehaviour
 
         // _muzzleFlashRoutine = StartCoroutine(MuzzleFlashRoutine());
         EjectShell();
+    }
+
+    private void PlayFireSound()
+    {
+        if (Time.time < _nextFireSoundTime)
+            return;
+
+        _nextFireSoundTime = Time.time + fireSoundInterval;
+        PlayOneShot(fireClip);
     }
 
     private void EjectShell()
@@ -565,6 +972,17 @@ public class PlayerWeapon : MonoBehaviour
 
             _shellPool.Add(item);
         }
+    }
+
+    private void ResetShellPool()
+    {
+        for (int i = 0; i < _shellPool.Count; i++)
+        {
+            if (_shellPool[i].GameObject != null)
+                Destroy(_shellPool[i].GameObject);
+        }
+
+        _shellPool.Clear();
     }
 
     private ShellPoolItem GetShellPoolItem()
@@ -778,14 +1196,43 @@ public class PlayerWeapon : MonoBehaviour
 
     private void PlayAction(string stateName, float duration)
     {
+        bool playedMainAnimator = false;
         if (playerAnimation != null)
         {
             playerAnimation.PlayActionState(stateName, duration);
-            return;
+            playedMainAnimator = true;
         }
 
-        if (animator != null && !string.IsNullOrWhiteSpace(stateName))
+        if (!playedMainAnimator && animator != null && HasAnimatorState(animator, stateName))
             animator.CrossFadeInFixedTime(stateName, 0.05f);
+
+        PlayLinkedAnimators(stateName);
+    }
+
+    private void PlayLinkedAnimators(string stateName)
+    {
+        if (_linkedWeaponAnimators == null || string.IsNullOrWhiteSpace(stateName))
+            return;
+
+        int stateHash = Animator.StringToHash(stateName);
+        for (int i = 0; i < _linkedWeaponAnimators.Length; i++)
+        {
+            Animator linkedAnimator = _linkedWeaponAnimators[i];
+            if (linkedAnimator == null || linkedAnimator == animator)
+                continue;
+
+            if (!linkedAnimator.HasState(0, stateHash))
+                continue;
+
+            linkedAnimator.CrossFadeInFixedTime(stateHash, 0.05f);
+        }
+    }
+
+    private bool HasAnimatorState(Animator targetAnimator, string stateName)
+    {
+        return targetAnimator != null &&
+               !string.IsNullOrWhiteSpace(stateName) &&
+               targetAnimator.HasState(0, Animator.StringToHash(stateName));
     }
 
     private static AudioClip CreateToneClip(string clipName, float frequency, float duration, float volume)

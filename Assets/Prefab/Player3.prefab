@@ -744,6 +744,7 @@ MonoBehaviour:
   playerAnimation: {fileID: 4269125211606204174}
   muzzlePoint: {fileID: 9076423254571135979}
   audioSource: {fileID: 6492587213939262156}
+  weaponData: {fileID: 11400000, guid: 0a9b85d6dc532ea40b232ae6a0c6d1eb, type: 2}
   damage: 10
   range: 100
   fireRate: 9

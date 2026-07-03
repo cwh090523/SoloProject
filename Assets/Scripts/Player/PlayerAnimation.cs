@@ -68,6 +68,12 @@ public class PlayerAnimation : MonoBehaviour
         _actionLockedUntil = Time.time + duration;
     }
 
+    public void ClearActionLock()
+    {
+        _actionLockedUntil = 0f;
+        _currentStateHash = 0;
+    }
+
     public void SetAiming(bool isAiming)
     {
         if (_isAiming == isAiming)

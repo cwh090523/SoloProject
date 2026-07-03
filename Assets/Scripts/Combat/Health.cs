@@ -85,6 +85,24 @@ public class Health : MonoBehaviour, IDamageable
         HealthChanged?.Invoke(currentHealth, maxHealth);
     }
 
+    public void SetDebugHealth(float newCurrentHealth, float newMaxHealth)
+    {
+        if (_deathRoutine != null)
+        {
+            StopCoroutine(_deathRoutine);
+            _deathRoutine = null;
+        }
+
+        maxHealth = Mathf.Max(1f, newMaxHealth);
+        currentHealth = Mathf.Clamp(newCurrentHealth, 0f, maxHealth);
+        IsDead = currentHealth <= 0f;
+
+        if (!IsDead)
+            ResetHealth?.Invoke();
+
+        HealthChanged?.Invoke(currentHealth, maxHealth);
+    }
+
     public void RestoreFullHealth()
     {
         if (_deathRoutine != null)

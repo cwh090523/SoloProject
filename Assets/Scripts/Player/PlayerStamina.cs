@@ -21,6 +21,7 @@ public class PlayerStamina : MonoBehaviour
 
     public float MaxStamina => maxStamina;
     public float CurrentStamina => currentStamina;
+    public float RecoveryPerSecond => recoveryPerSecond;
     public float NormalizedStamina => maxStamina <= 0f ? 0f : Mathf.Clamp01(currentStamina / maxStamina);
     public bool CanSprint => !_isExhausted && currentStamina > 0f;
 
@@ -97,6 +98,17 @@ public class PlayerStamina : MonoBehaviour
             return;
 
         recoveryPerSecond += amount;
+    }
+
+    public void SetDebugStamina(float newCurrentStamina, float newMaxStamina, float newRecoveryPerSecond)
+    {
+        maxStamina = Mathf.Max(1f, newMaxStamina);
+        currentStamina = Mathf.Clamp(newCurrentStamina, 0f, maxStamina);
+        recoveryPerSecond = Mathf.Max(0f, newRecoveryPerSecond);
+        _recoverTimer = 0f;
+        _isExhausted = currentStamina <= 0f;
+
+        StaminaChanged?.Invoke(currentStamina, maxStamina);
     }
 
     private void SetStamina(float value)

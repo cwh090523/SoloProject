@@ -18,6 +18,13 @@
                     </ui:VisualElement>
                     <ui:Slider name="MouseSensitivitySlider" low-value="0.001" high-value="10" value="0.3" style="margin-top: 8px; height: 28px;"/>
                 </ui:VisualElement>
+                <ui:VisualElement style="height: 58px;">
+                    <ui:VisualElement style="height: 22px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="AIM SENSITIVITY" style="color: rgba(255, 255, 255, 0.8); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:Label text="50%" name="AimSensitivityValueLabel" style="color: rgb(255, 214, 90); font-size: 16px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    </ui:VisualElement>
+                    <ui:Slider name="AimSensitivitySlider" low-value="0.1" high-value="1" value="0.5" style="margin-top: 8px; height: 28px;"/>
+                </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement style="margin-bottom: 14px; padding-left: 14px; padding-right: 14px; padding-top: 10px; padding-bottom: 12px; background-color: rgba(28, 43, 48, 0.68); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(226, 168, 73, 0.16); border-right-color: rgba(0, 0, 0, 0.45); border-top-color: rgba(226, 168, 73, 0.14); border-bottom-color: rgba(0, 0, 0, 0.55);">
                 <ui:Label text="AUDIO" style="height: 21px; color: rgb(255, 214, 90); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>

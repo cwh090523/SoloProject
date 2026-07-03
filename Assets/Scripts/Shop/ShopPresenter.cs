@@ -21,6 +21,7 @@ namespace Shop
         [SerializeField] private PlayerCamera playerCamera;
         [SerializeField] private PlayerStamina playerStamina;
         [SerializeField] private PlayerWeapon playerWeapon;
+        [SerializeField] private PlayerWeaponInventory weaponInventory;
         [SerializeField] private AimTargetScanner aimTargetScanner;
         [SerializeField] private PlayerDebugHealOnKey debugHealOnKey;
         [SerializeField] private Rigidbody playerRigidbody;
@@ -215,6 +216,12 @@ namespace Shop
 
             if (playerWeapon == null)
                 playerWeapon = player.GetComponent<PlayerWeapon>();
+
+            if (weaponInventory == null)
+                weaponInventory = player.GetComponent<PlayerWeaponInventory>();
+
+            if (weaponInventory == null && playerWeapon != null)
+                weaponInventory = player.gameObject.AddComponent<PlayerWeaponInventory>();
 
             if (aimTargetScanner == null)
                 aimTargetScanner = player.GetComponent<AimTargetScanner>();
@@ -491,8 +498,31 @@ namespace Shop
                     return false;
 
                 case ShopItemType.Weapon:
-                    reason = "Weapon purchase needs a weapon inventory system first.";
-                    return false;
+                    if (weaponInventory == null)
+                    {
+                        reason = "Player weapon inventory is missing.";
+                        return false;
+                    }
+
+                    if (item.WeaponData == null)
+                    {
+                        reason = "Weapon data is missing.";
+                        return false;
+                    }
+
+                    if (item.WeaponData.weaponPrefab == null)
+                    {
+                        reason = "Weapon prefab is missing.";
+                        return false;
+                    }
+
+                    if (weaponInventory.IsUnlocked(item.WeaponData))
+                    {
+                        reason = "Weapon is already unlocked.";
+                        return false;
+                    }
+
+                    return true;
 
                 default:
                     reason = "Unknown shop item type.";
@@ -526,6 +556,10 @@ namespace Shop
 
                 case ShopItemType.Ammo:
                     playerWeapon.AddReserveAmmo(Mathf.RoundToInt(item.Amount));
+                    break;
+
+                case ShopItemType.Weapon:
+                    weaponInventory.Unlock(item.WeaponData);
                     break;
             }
         }
@@ -589,7 +623,13 @@ namespace Shop
                     return $"+{Mathf.RoundToInt(item.Amount)} AMMO";
 
                 case ShopItemType.Weapon:
-                    return "UNIQUE WEAPON";
+                    if (item.WeaponData == null)
+                        return "UNIQUE WEAPON";
+
+                    string weaponName = string.IsNullOrWhiteSpace(item.WeaponData.weaponName)
+                        ? item.WeaponData.name
+                        : item.WeaponData.weaponName;
+                    return $"UNLOCK {weaponName.ToUpperInvariant()}";
 
                 default:
                     return string.Empty;

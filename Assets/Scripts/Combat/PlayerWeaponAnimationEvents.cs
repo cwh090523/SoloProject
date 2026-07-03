@@ -9,6 +9,11 @@ public class PlayerWeaponAnimationEvents : MonoBehaviour
         ResolveWeapon();
     }
 
+    public void Bind(PlayerWeapon targetWeapon)
+    {
+        weapon = targetWeapon;
+    }
+
     public void DropMag()
     {
         ResolveWeapon();
@@ -31,6 +36,12 @@ public class PlayerWeaponAnimationEvents : MonoBehaviour
     {
         ResolveWeapon();
         weapon?.Reload();
+    }
+
+    public void SecondaryMeleeHit()
+    {
+        ResolveWeapon();
+        weapon?.SecondaryMeleeHit();
     }
 
     private void ResolveWeapon()

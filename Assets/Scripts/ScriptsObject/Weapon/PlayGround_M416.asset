@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd0b58b92364dd784c8db08baef124c, type: 3}
+  m_Name: PlayGround_M416
+  m_EditorClassIdentifier: Assembly-CSharp::ScriptableObjectScripts.WeaponDataSO
+  weaponName: M416
+  weaponPrefab: {fileID: 0}
+  icon: {fileID: -1391802321, guid: e2f1464d0e69f0441b0712d54cb327ad, type: 3}
+  fireSoundInterval: 0.06
+  damage: 10
+  range: 1000
+  fireRate: 10000
+  automatic: 1
+  autoFireHoldDelay: 0
+  magazineSize: 300000
+  startingReserveAmmo: 90000000
+  reloadTime: 3.6
+  spreadPerShot: 0
+  maxSpread: 0
+  spreadRecoverySpeed: 0
+  spreadAnglePerPoint: 0
+  aimSpreadMultiplier: 9
+  aimSpreadIncreasePerShot: 0
+  aimSpreadRecoverySpeed: 6066
+  verticalRecoil: 0
+  horizontalRecoil: 0
+  aimFov: 50
+  useScopeOverlay: 0
+  scopeOverlaySprite: {fileID: 0}
+  secondaryActionType: 0
+  secondaryHoldStateName: 
+  secondaryReleaseStateName: 
+  secondaryAnimationDuration: 0.2
+  secondaryMeleeDamage: 35
+  secondaryMeleeRange: 2
+  secondaryMeleeRadius: 0.35
+  secondaryMeleeHitInterval: 0.35
+  equipStateName: DRAW
+  equipAnimationDuration: 0.35
+  fireStateName: FIRE
+  fireStateNames: []
+  aimFireStateName: AIMMING_FIRE
+  reloadStateName: RELOAD
+  fireAnimationDuration: 0.12
+  fireClip: {fileID: 8300000, guid: 5e13ba99de1a94046b41d5fdbc74e92e, type: 3}
+  reloadClip: {fileID: 0}
+  dropMagazineClip: {fileID: 8300000, guid: 17fde9cb7c6119d4588f643b86b9d4f0, type: 3}
+  inputMagazineClip: {fileID: 8300000, guid: 4827b95aca172d4499214c223165054a, type: 3}
+  lockMagazineClip: {fileID: 8300000, guid: 94e4152c980c05347bfbf96ff57d39d0, type: 3}
+  shellPrefab: {fileID: 7103081623043950048, guid: 418933a674648464dac052f0fc776194, type: 3}

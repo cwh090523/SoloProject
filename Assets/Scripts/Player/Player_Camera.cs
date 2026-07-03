@@ -10,6 +10,7 @@ public class PlayerCamera : MonoBehaviour
 
     [Header("Input")]
     [SerializeField] private PlayerInput playerInput;
+    [SerializeField] private PlayerWeapon playerWeapon;
     [field:SerializeField, Range(0.001f, 10f)]public float mouseSpeed;
     
     [Header("Rotate")] 
@@ -45,6 +46,9 @@ public class PlayerCamera : MonoBehaviour
 
         if (cam == null)
             cam = GetComponentInChildren<Camera>();
+
+        if (playerWeapon == null)
+            playerWeapon = GetComponent<PlayerWeapon>();
 
         if (cam != null)
             _cameraBaseLocalPosition = cam.transform.localPosition;
@@ -87,8 +91,9 @@ public class PlayerCamera : MonoBehaviour
         mouseDelta.x = Mathf.Clamp(mouseDelta.x, -20f, 20f);
         mouseDelta.y = Mathf.Clamp(mouseDelta.y, -20f, 20f);
 
-        float mouseX = mouseDelta.x * mouseSpeed;
-        float mouseY = mouseDelta.y * mouseSpeed;
+        float effectiveMouseSpeed = GetEffectiveMouseSpeed();
+        float mouseX = mouseDelta.x * effectiveMouseSpeed;
+        float mouseY = mouseDelta.y * effectiveMouseSpeed;
 
         _yRotate += mouseX;
         _xRotate -= mouseY;
@@ -113,6 +118,23 @@ public class PlayerCamera : MonoBehaviour
         _targetRecoil += new Vector2(vertical, horizontal);
     }
 
+    public void AimAtWorldPoint(Vector3 worldPoint)
+    {
+        if (cam == null)
+            return;
+
+        Vector3 direction = worldPoint - cam.transform.position;
+        if (direction.sqrMagnitude <= 0.0001f)
+            return;
+
+        Quaternion lookRotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+        Vector3 eulerAngles = lookRotation.eulerAngles;
+        float pitch = eulerAngles.x > 180f ? eulerAngles.x - 360f : eulerAngles.x;
+
+        _yRotate = eulerAngles.y;
+        _xRotate = Mathf.Clamp(pitch, -90f, 90f);
+    }
+
     private void HandleLeanChanged(float lean)
     {
         _targetLean = Mathf.Clamp(lean, -1f, 1f);
@@ -124,5 +146,14 @@ public class PlayerCamera : MonoBehaviour
         localPosition.x = _cameraBaseLocalPosition.x + _currentLean * leanOffset;
         localPosition.z = _cameraBaseLocalPosition.z;
         cam.transform.localPosition = localPosition;
+    }
+
+    private float GetEffectiveMouseSpeed()
+    {
+        float baseSpeed = mouseSpeed;
+        if (playerWeapon != null && playerWeapon.IsAiming)
+            baseSpeed *= GameSettings.AimSensitivityMultiplier;
+
+        return baseSpeed;
     }
 }

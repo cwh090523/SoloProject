@@ -17,6 +17,7 @@ MonoBehaviour:
   itemType: 4
   price: 200
   amount: 10
-  uniquePurchase: 1
+  uniquePurchase: 0
   uniqueId: 
   weaponPrefab: {fileID: 0}
+  weaponData: {fileID: 0}

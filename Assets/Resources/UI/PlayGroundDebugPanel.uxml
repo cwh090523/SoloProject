@@ -1,0 +1,57 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="True">
+    <ui:VisualElement name="AssistPanelRoot" class="debug-root" style="left: 1500px; flex-shrink: 1; width: 400px; top: 25px; height: 720px; display: none;">
+        <ui:Image name="Image" style="flex-grow: 1; background-color: rgb(119, 119, 119);">
+            <ui:VisualElement class="debug-panel">
+                <ui:VisualElement class="debug-header">
+                    <ui:Label text="PLAYGROUND" class="debug-kicker"/>
+                    <ui:Label text="게임 어시스트 패널" class="debug-title"/>
+                    <ui:Label text="F5 패널 온 오프/ F6 사격 보조 / F7 위치 확인" class="debug-hint"/>
+                </ui:VisualElement>
+                <ui:VisualElement class="debug-section">
+                    <ui:Label text="어시스트" class="debug-section-title"/>
+                    <ui:Toggle name="AimAssistToggle" text="Aim Assist" class="debug-toggle"/>
+                    <ui:Toggle name="EspToggle" text="ESP View" class="debug-toggle"/>
+                    <ui:Toggle name="PenetrationAssistToggle" text="Penetration Assist" class="debug-toggle"/>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Aim Range" class="debug-row-label"/>
+                        <ui:TextField name="AimAssistRangeInput" class="debug-input"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="debug-section">
+                    <ui:Label text="PLAYER" class="debug-section-title"/>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="HP" class="debug-row-label"/>
+                        <ui:TextField name="HealthInput" class="debug-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Max HP" class="debug-row-label"/>
+                        <ui:TextField name="MaxHealthInput" class="debug-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Stamina" class="debug-row-label"/>
+                        <ui:TextField name="StaminaInput" class="debug-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Max Stamina" class="debug-row-label"/>
+                        <ui:TextField name="MaxStaminaInput" class="debug-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Stamina Regen" class="debug-row-label"/>
+                        <ui:TextField name="StaminaRecoveryInput" class="debug-input"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement class="debug-section">
+                    <ui:Label text="WEAPON" class="debug-section-title"/>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Damage" class="debug-row-label"/>
+                        <ui:TextField name="DamageInput" class="debug-input"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="debug-row">
+                        <ui:Label text="Fire Rate" class="debug-row-label"/>
+                        <ui:TextField name="FireRateInput" class="debug-input"/>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:Image>
+    </ui:VisualElement>
+</ui:UXML>

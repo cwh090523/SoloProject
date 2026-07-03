@@ -18,6 +18,13 @@
             <ui:Label text="임무" style="color: rgb(255, 214, 90); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
             <ui:Label text="모든 웨이브에서 살아남고 &#10;게임을 클리어 하세요" style="margin-top: 8px; white-space: normal; color: rgba(255, 255, 255, 0.78); font-size: 18px; -unity-font-style: bold; letter-spacing: 0;"/>
         </ui:VisualElement>
+        <ui:VisualElement name="PlayModePanel" style="position: absolute; left: 470px; bottom: 72px; width: 350px; padding-left: 18px; padding-right: 18px; padding-top: 16px; padding-bottom: 16px; display: none; background-color: rgba(28, 21, 15, 0.95); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgba(255, 214, 90, 0.38); border-right-color: rgba(0, 0, 0, 0.7); border-top-color: rgba(255, 214, 90, 0.38); border-bottom-color: rgba(0, 0, 0, 0.82);">
+            <ui:Label text="SELECT MODE" style="height: 30px; color: rgb(255, 214, 90); font-size: 20px; -unity-font-style: bold; letter-spacing: 0;"/>
+            <ui:Label text="Choose where to deploy." style="margin-bottom: 12px; color: rgba(255, 255, 255, 0.72); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+            <ui:Button text="NORMAL PLAY" name="NormalPlayButton" style="height: 50px; margin-bottom: 10px; color: rgb(250, 236, 205); font-size: 22px; -unity-font-style: bold; background-color: rgb(122, 39, 34); border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;"/>
+            <ui:Button text="PLAY GROUND" name="PlayGroundButton" style="height: 50px; margin-bottom: 10px; color: rgb(250, 236, 205); font-size: 22px; -unity-font-style: bold; background-color: rgb(31, 63, 80); border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;"/>
+            <ui:Button text="BACK" name="ClosePlayModeButton" style="height: 42px; color: rgba(250, 236, 205, 0.92); font-size: 18px; -unity-font-style: bold; background-color: rgba(43, 35, 28, 0.94); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.14); border-right-color: rgba(255, 255, 255, 0.06); border-top-color: rgba(255, 255, 255, 0.14); border-bottom-color: rgba(0, 0, 0, 0.66); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px;"/>
+        </ui:VisualElement>
         <ui:VisualElement name="SettingsPanel" style="position: absolute; right: 46px; top: 34px; width: 590px; padding-left: 24px; padding-right: 24px; padding-top: 20px; padding-bottom: 22px; display: none; background-color: rgba(31, 24, 18, 0.96); border-top-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-bottom-left-radius: 6px; border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-left-color: rgba(255, 255, 255, 0.22); border-right-color: rgba(0, 0, 0, 0.7); border-top-color: rgba(255, 255, 255, 0.22); border-bottom-color: rgba(0, 0, 0, 0.85);">
             <ui:VisualElement style="height: 48px; flex-direction: row; align-items: center; justify-content: space-between;">
                 <ui:Label text="SETTINGS" style="color: rgb(255, 255, 255); font-size: 34px; -unity-font-style: bold; letter-spacing: 0;"/>
@@ -35,6 +42,13 @@
                         </ui:VisualElement>
                     </ui:VisualElement>
                     <ui:Slider name="MouseSensitivitySlider" low-value="0.001" high-value="10" value="0.3" style="margin-top: 8px; height: 28px;"/>
+                </ui:VisualElement>
+                <ui:VisualElement style="height: 58px;">
+                    <ui:VisualElement style="height: 22px; flex-direction: row; justify-content: space-between;">
+                        <ui:Label text="AIM SENSITIVITY" style="color: rgba(255, 255, 255, 0.8); font-size: 15px; -unity-font-style: bold; letter-spacing: 0;"/>
+                        <ui:Label text="50%" name="AimSensitivityValueLabel" style="color: rgb(255, 214, 90); font-size: 16px; -unity-font-style: bold; letter-spacing: 0;"/>
+                    </ui:VisualElement>
+                    <ui:Slider name="AimSensitivitySlider" low-value="0.1" high-value="1" value="0.5" style="margin-top: 8px; height: 28px;"/>
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement style="margin-bottom: 14px; padding-left: 14px; padding-right: 14px; padding-top: 10px; padding-bottom: 12px; background-color: rgba(16, 30, 43, 0.72); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.16); border-right-color: rgba(0, 0, 0, 0.45); border-top-color: rgba(255, 255, 255, 0.16); border-bottom-color: rgba(0, 0, 0, 0.55);">

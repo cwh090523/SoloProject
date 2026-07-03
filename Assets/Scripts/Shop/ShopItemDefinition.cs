@@ -1,4 +1,5 @@
 using UnityEngine;
+using ScriptableObjectScripts;
 
 namespace Shop
 {
@@ -13,6 +14,7 @@ namespace Shop
         [SerializeField] private bool uniquePurchase;
         [SerializeField] private string uniqueId;
         [SerializeField] private GameObject weaponPrefab;
+        [SerializeField] private WeaponDataSO weaponData;
 
         public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? name : displayName;
         public string Description => description;
@@ -20,7 +22,8 @@ namespace Shop
         public int Price => price;
         public float Amount => amount;
         public bool UniquePurchase => uniquePurchase || itemType == ShopItemType.Weapon;
-        public GameObject WeaponPrefab => weaponPrefab;
+        public WeaponDataSO WeaponData => weaponData;
+        public GameObject WeaponPrefab => weaponData != null ? weaponData.weaponPrefab : weaponPrefab;
         public string UniqueId => string.IsNullOrWhiteSpace(uniqueId) ? name : uniqueId;
     }
 }

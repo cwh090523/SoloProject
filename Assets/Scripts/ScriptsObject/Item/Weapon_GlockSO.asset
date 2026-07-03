@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e2f4f96d2a148d4811a56e4822b7101, type: 3}
+  m_Name: Weapon_GlockSO
+  m_EditorClassIdentifier: Assembly-CSharp::Shop.ShopItemDefinition
+  displayName: "\uAE00\uB85D"
+  description: "\uAD8C\uCD1D\uC785\uB2C8\uB2E4. \uC5F0\uC0AC\uB825\uACFC \uB370\uBBF8\uC9C0\uAC00
+    \uB5A8\uC5B4\uC9D1\uB2C8\uB2E4. \uD558\uC9C0\uB9CC \uC7AC\uBC0C\uC8E0?"
+  itemType: 6
+  price: 300
+  amount: 1000000
+  uniquePurchase: 1
+  uniqueId: weapon_glock
+  weaponPrefab: {fileID: 1765345875714748697, guid: 4ebd6ca7f5aa27841a2a7c5670c3eb54, type: 3}
+  weaponData: {fileID: 11400000, guid: 923ede8f55d41504ba68b0831453c595, type: 2}

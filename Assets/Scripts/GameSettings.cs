@@ -4,8 +4,11 @@ public static class GameSettings
 {
     public const float MinMouseSensitivity = 0.001f;
     public const float MaxMouseSensitivity = 10f;
+    public const float MinAimSensitivityMultiplier = 0.1f;
+    public const float MaxAimSensitivityMultiplier = 1f;
 
     private const string MouseSensitivityKey = "Settings.MouseSensitivity";
+    private const string AimSensitivityMultiplierKey = "Settings.AimSensitivityMultiplier";
     private const string MasterVolumeKey = "Settings.MasterVolume";
     private const string BgmVolumeKey = "Settings.BgmVolume";
     private const string SfxVolumeKey = "Settings.SfxVolume";
@@ -19,6 +22,12 @@ public static class GameSettings
     {
         get => Mathf.Clamp(PlayerPrefs.GetFloat(MouseSensitivityKey, 0.3f), MinMouseSensitivity, MaxMouseSensitivity);
         set => PlayerPrefs.SetFloat(MouseSensitivityKey, Mathf.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity));
+    }
+
+    public static float AimSensitivityMultiplier
+    {
+        get => Mathf.Clamp(PlayerPrefs.GetFloat(AimSensitivityMultiplierKey, 0.5f), MinAimSensitivityMultiplier, MaxAimSensitivityMultiplier);
+        set => PlayerPrefs.SetFloat(AimSensitivityMultiplierKey, Mathf.Clamp(value, MinAimSensitivityMultiplier, MaxAimSensitivityMultiplier));
     }
 
     public static float MasterVolume
